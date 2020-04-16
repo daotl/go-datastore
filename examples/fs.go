@@ -1,3 +1,9 @@
+// Copyright for portions of this fork are held by [Juan Batiz-Benet, 2016] as
+// part of the original go-datastore project. All other copyright for
+// this fork are held by [The BDWare Authors, 2020]. All rights reserved.
+// Use of this source code is governed by MIT license that can be
+// found in the LICENSE file.
+
 // Package fs is a simple Datastore implementation that stores keys
 // as directories and files, mirroring the key. That is, the key
 // "/foo/bar" is stored as file "PATH/foo/bar/.dsobject".
@@ -118,6 +124,13 @@ func (d *Datastore) Query(q query.Query) (query.Results, error) {
 			if strings.HasSuffix(path, ObjectKeySuffix) {
 				path = path[:len(path)-len(ObjectKeySuffix)]
 			}
+			// Only selects keys that are strict children of the prefix.
+			if path[0] != '/' {
+				path = "/" + path
+			}
+			if path == q.Prefix {
+				return nil
+			}
 			var result query.Result
 			key := ds.NewKey(path)
 			result.Entry.Key = key.String()
@@ -130,11 +143,17 @@ func (d *Datastore) Query(q query.Query) (query.Results, error) {
 	}
 
 	go func() {
-		filepath.Walk(d.path, walkFn)
+		if q.Prefix != "" {
+			filepath.Walk(filepath.Join(d.path, q.Prefix), walkFn)
+		} else {
+			filepath.Walk(d.path, walkFn)
+		}
 		close(results)
 	}()
 	r := query.ResultsWithChan(q, results)
-	r = query.NaiveQueryApply(q, r)
+	q1 := q
+	q1.Prefix = ""
+	r = query.NaiveQueryApply(q1, r)
 	return r, nil
 }
 
