@@ -3,14 +3,15 @@ package datastore
 import (
 	"log"
 
-	dsq "github.com/ipfs/go-datastore/query"
+	key "github.com/bdware/go-datastore/key"
+	dsq "github.com/bdware/go-datastore/query"
 )
 
 // Here are some basic datastore implementations.
 
 // MapDatastore uses a standard Go map for internal storage.
 type MapDatastore struct {
-	values map[Key][]byte
+	values map[key.Key][]byte
 }
 
 // NewMapDatastore constructs a MapDatastore. It is _not_ thread-safe by
@@ -18,23 +19,23 @@ type MapDatastore struct {
 // is usually yes).
 func NewMapDatastore() (d *MapDatastore) {
 	return &MapDatastore{
-		values: make(map[Key][]byte),
+		values: make(map[key.Key][]byte),
 	}
 }
 
 // Put implements Datastore.Put
-func (d *MapDatastore) Put(key Key, value []byte) (err error) {
+func (d *MapDatastore) Put(key key.Key, value []byte) (err error) {
 	d.values[key] = value
 	return nil
 }
 
 // Sync implements Datastore.Sync
-func (d *MapDatastore) Sync(prefix Key) error {
+func (d *MapDatastore) Sync(prefix key.Key) error {
 	return nil
 }
 
 // Get implements Datastore.Get
-func (d *MapDatastore) Get(key Key) (value []byte, err error) {
+func (d *MapDatastore) Get(key key.Key) (value []byte, err error) {
 	val, found := d.values[key]
 	if !found {
 		return nil, ErrNotFound
@@ -43,13 +44,13 @@ func (d *MapDatastore) Get(key Key) (value []byte, err error) {
 }
 
 // Has implements Datastore.Has
-func (d *MapDatastore) Has(key Key) (exists bool, err error) {
+func (d *MapDatastore) Has(key key.Key) (exists bool, err error) {
 	_, found := d.values[key]
 	return found, nil
 }
 
 // GetSize implements Datastore.GetSize
-func (d *MapDatastore) GetSize(key Key) (size int, err error) {
+func (d *MapDatastore) GetSize(key key.Key) (size int, err error) {
 	if v, found := d.values[key]; found {
 		return len(v), nil
 	}
@@ -57,7 +58,7 @@ func (d *MapDatastore) GetSize(key Key) (size int, err error) {
 }
 
 // Delete implements Datastore.Delete
-func (d *MapDatastore) Delete(key Key) (err error) {
+func (d *MapDatastore) Delete(key key.Key) (err error) {
 	delete(d.values, key)
 	return nil
 }
@@ -96,32 +97,32 @@ func NewNullDatastore() *NullDatastore {
 }
 
 // Put implements Datastore.Put
-func (d *NullDatastore) Put(key Key, value []byte) (err error) {
+func (d *NullDatastore) Put(key key.Key, value []byte) (err error) {
 	return nil
 }
 
 // Sync implements Datastore.Sync
-func (d *NullDatastore) Sync(prefix Key) error {
+func (d *NullDatastore) Sync(prefix key.Key) error {
 	return nil
 }
 
 // Get implements Datastore.Get
-func (d *NullDatastore) Get(key Key) (value []byte, err error) {
+func (d *NullDatastore) Get(key key.Key) (value []byte, err error) {
 	return nil, ErrNotFound
 }
 
 // Has implements Datastore.Has
-func (d *NullDatastore) Has(key Key) (exists bool, err error) {
+func (d *NullDatastore) Has(key key.Key) (exists bool, err error) {
 	return false, nil
 }
 
 // Has implements Datastore.GetSize
-func (d *NullDatastore) GetSize(key Key) (size int, err error) {
+func (d *NullDatastore) GetSize(key key.Key) (size int, err error) {
 	return -1, ErrNotFound
 }
 
 // Delete implements Datastore.Delete
-func (d *NullDatastore) Delete(key Key) (err error) {
+func (d *NullDatastore) Delete(key key.Key) (err error) {
 	return nil
 }
 
@@ -165,38 +166,38 @@ func (d *LogDatastore) Children() []Datastore {
 }
 
 // Put implements Datastore.Put
-func (d *LogDatastore) Put(key Key, value []byte) (err error) {
+func (d *LogDatastore) Put(key key.Key, value []byte) (err error) {
 	log.Printf("%s: Put %s\n", d.Name, key)
 	// log.Printf("%s: Put %s ```%s```", d.Name, key, value)
 	return d.child.Put(key, value)
 }
 
 // Sync implements Datastore.Sync
-func (d *LogDatastore) Sync(prefix Key) error {
+func (d *LogDatastore) Sync(prefix key.Key) error {
 	log.Printf("%s: Sync %s\n", d.Name, prefix)
 	return d.child.Sync(prefix)
 }
 
 // Get implements Datastore.Get
-func (d *LogDatastore) Get(key Key) (value []byte, err error) {
+func (d *LogDatastore) Get(key key.Key) (value []byte, err error) {
 	log.Printf("%s: Get %s\n", d.Name, key)
 	return d.child.Get(key)
 }
 
 // Has implements Datastore.Has
-func (d *LogDatastore) Has(key Key) (exists bool, err error) {
+func (d *LogDatastore) Has(key key.Key) (exists bool, err error) {
 	log.Printf("%s: Has %s\n", d.Name, key)
 	return d.child.Has(key)
 }
 
 // GetSize implements Datastore.GetSize
-func (d *LogDatastore) GetSize(key Key) (size int, err error) {
+func (d *LogDatastore) GetSize(key key.Key) (size int, err error) {
 	log.Printf("%s: GetSize %s\n", d.Name, key)
 	return d.child.GetSize(key)
 }
 
 // Delete implements Datastore.Delete
-func (d *LogDatastore) Delete(key Key) (err error) {
+func (d *LogDatastore) Delete(key key.Key) (err error) {
 	log.Printf("%s: Delete %s\n", d.Name, key)
 	return d.child.Delete(key)
 }
@@ -242,14 +243,14 @@ func (d *LogDatastore) Batch() (Batch, error) {
 }
 
 // Put implements Batch.Put
-func (d *LogBatch) Put(key Key, value []byte) (err error) {
+func (d *LogBatch) Put(key key.Key, value []byte) (err error) {
 	log.Printf("%s: BatchPut %s\n", d.Name, key)
 	// log.Printf("%s: Put %s ```%s```", d.Name, key, value)
 	return d.child.Put(key, value)
 }
 
 // Delete implements Batch.Delete
-func (d *LogBatch) Delete(key Key) (err error) {
+func (d *LogBatch) Delete(key key.Key) (err error) {
 	log.Printf("%s: BatchDelete %s\n", d.Name, key)
 	return d.child.Delete(key)
 }

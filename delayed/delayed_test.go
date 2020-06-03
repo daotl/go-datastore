@@ -4,15 +4,16 @@ import (
 	"testing"
 	"time"
 
-	datastore "github.com/ipfs/go-datastore"
-	dstest "github.com/ipfs/go-datastore/test"
+	datastore "github.com/bdware/go-datastore"
+	key "github.com/bdware/go-datastore/key"
+	dstest "github.com/bdware/go-datastore/test"
 	delay "github.com/ipfs/go-ipfs-delay"
 )
 
 func TestDelayed(t *testing.T) {
 	d := New(datastore.NewMapDatastore(), delay.Fixed(time.Second))
 	now := time.Now()
-	k := datastore.NewKey("test")
+	k := key.NewStrKey("test")
 	err := d.Put(k, []byte("value"))
 	if err != nil {
 		t.Fatal(err)

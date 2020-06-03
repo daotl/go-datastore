@@ -7,7 +7,8 @@ import (
 	"math/rand"
 	"testing"
 
-	dstore "github.com/ipfs/go-datastore"
+	dstore "github.com/bdware/go-datastore"
+	key "github.com/bdware/go-datastore/key"
 )
 
 var (
@@ -21,13 +22,13 @@ func RunBatchTest(t *testing.T, ds dstore.Batching) {
 	}
 
 	var blocks [][]byte
-	var keys []dstore.Key
+	var keys []key.Key
 	for i := 0; i < 20; i++ {
 		blk := make([]byte, 256*1024)
 		rand.Read(blk)
 		blocks = append(blocks, blk)
 
-		key := dstore.NewKey(base32.StdEncoding.EncodeToString(blk[:8]))
+		key := key.NewStrKey(base32.StdEncoding.EncodeToString(blk[:8]))
 		keys = append(keys, key)
 
 		err := batch.Put(key, blk)
@@ -63,12 +64,12 @@ func RunBatchTest(t *testing.T, ds dstore.Batching) {
 }
 
 func RunBatchDeleteTest(t *testing.T, ds dstore.Batching) {
-	var keys []dstore.Key
+	var keys []key.Key
 	for i := 0; i < 20; i++ {
 		blk := make([]byte, 16)
 		rand.Read(blk)
 
-		key := dstore.NewKey(base32.StdEncoding.EncodeToString(blk[:8]))
+		key := key.NewStrKey(base32.StdEncoding.EncodeToString(blk[:8]))
 		keys = append(keys, key)
 
 		err := ds.Put(key, blk)
@@ -107,8 +108,8 @@ func RunBatchPutAndDeleteTest(t *testing.T, ds dstore.Batching) {
 		t.Fatal(err)
 	}
 
-	ka := dstore.NewKey("/a")
-	kb := dstore.NewKey("/b")
+	ka := key.NewStrKey("/a")
+	kb := key.NewStrKey("/b")
 
 	if err := batch.Put(ka, []byte{1}); err != nil {
 		t.Error(err)

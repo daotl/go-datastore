@@ -1,6 +1,6 @@
 package keytransform
 
-import ds "github.com/ipfs/go-datastore"
+import key "github.com/bdware/go-datastore/key"
 
 // Pair is a convince struct for constructing a key transform.
 type Pair struct {
@@ -8,11 +8,11 @@ type Pair struct {
 	Invert  KeyMapping
 }
 
-func (t *Pair) ConvertKey(k ds.Key) ds.Key {
+func (t *Pair) ConvertKey(k key.Key) key.Key {
 	return t.Convert(k)
 }
 
-func (t *Pair) InvertKey(k ds.Key) ds.Key {
+func (t *Pair) InvertKey(k key.Key) key.Key {
 	return t.Invert(k)
 }
 
@@ -24,16 +24,16 @@ var _ KeyTransform = (*Pair)(nil)
 // Warning: will panic if prefix not found when it should be there. This is
 // to avoid insidious data inconsistency errors.
 type PrefixTransform struct {
-	Prefix ds.Key
+	Prefix key.Key
 }
 
 // ConvertKey adds the prefix.
-func (p PrefixTransform) ConvertKey(k ds.Key) ds.Key {
+func (p PrefixTransform) ConvertKey(k key.Key) key.Key {
 	return p.Prefix.Child(k)
 }
 
 // InvertKey removes the prefix. panics if prefix not found.
-func (p PrefixTransform) InvertKey(k ds.Key) ds.Key {
+func (p PrefixTransform) InvertKey(k key.Key) key.Key {
 	if p.Prefix.String() == "/" {
 		return k
 	}
@@ -43,7 +43,7 @@ func (p PrefixTransform) InvertKey(k ds.Key) ds.Key {
 	}
 
 	s := k.String()[len(p.Prefix.String()):]
-	return ds.RawKey(s)
+	return key.RawStrKey(s)
 }
 
 var _ KeyTransform = (*PrefixTransform)(nil)

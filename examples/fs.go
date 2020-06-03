@@ -31,8 +31,9 @@ import (
 	"path/filepath"
 	"strings"
 
-	ds "github.com/ipfs/go-datastore"
-	query "github.com/ipfs/go-datastore/query"
+	ds "github.com/bdware/go-datastore"
+	key "github.com/bdware/go-datastore/key"
+	query "github.com/bdware/go-datastore/query"
 )
 
 var ObjectKeySuffix = ".dsobject"
@@ -52,12 +53,12 @@ func NewDatastore(path string) (ds.Datastore, error) {
 }
 
 // KeyFilename returns the filename associated with `key`
-func (d *Datastore) KeyFilename(key ds.Key) string {
+func (d *Datastore) KeyFilename(key key.Key) string {
 	return filepath.Join(d.path, key.String(), ObjectKeySuffix)
 }
 
 // Put stores the given value.
-func (d *Datastore) Put(key ds.Key, value []byte) (err error) {
+func (d *Datastore) Put(key key.Key, value []byte) (err error) {
 	fn := d.KeyFilename(key)
 
 	// mkdirall above.
@@ -71,12 +72,12 @@ func (d *Datastore) Put(key ds.Key, value []byte) (err error) {
 
 // Sync would ensure that any previous Puts under the prefix are written to disk.
 // However, they already are.
-func (d *Datastore) Sync(prefix ds.Key) error {
+func (d *Datastore) Sync(prefix key.Key) error {
 	return nil
 }
 
 // Get returns the value for given key
-func (d *Datastore) Get(key ds.Key) (value []byte, err error) {
+func (d *Datastore) Get(key key.Key) (value []byte, err error) {
 	fn := d.KeyFilename(key)
 	if !isFile(fn) {
 		return nil, ds.ErrNotFound
@@ -86,16 +87,16 @@ func (d *Datastore) Get(key ds.Key) (value []byte, err error) {
 }
 
 // Has returns whether the datastore has a value for a given key
-func (d *Datastore) Has(key ds.Key) (exists bool, err error) {
+func (d *Datastore) Has(key key.Key) (exists bool, err error) {
 	return ds.GetBackedHas(d, key)
 }
 
-func (d *Datastore) GetSize(key ds.Key) (size int, err error) {
+func (d *Datastore) GetSize(key key.Key) (size int, err error) {
 	return ds.GetBackedSize(d, key)
 }
 
 // Delete removes the value for given key
-func (d *Datastore) Delete(key ds.Key) (err error) {
+func (d *Datastore) Delete(key key.Key) (err error) {
 	fn := d.KeyFilename(key)
 	if !isFile(fn) {
 		return nil
@@ -132,7 +133,7 @@ func (d *Datastore) Query(q query.Query) (query.Results, error) {
 				return nil
 			}
 			var result query.Result
-			key := ds.NewKey(path)
+			key := key.NewStrKey(path)
 			result.Entry.Key = key.String()
 			if !q.KeysOnly {
 				result.Entry.Value, result.Error = d.Get(key)

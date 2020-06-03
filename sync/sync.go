@@ -3,8 +3,9 @@ package sync
 import (
 	"sync"
 
-	ds "github.com/ipfs/go-datastore"
-	dsq "github.com/ipfs/go-datastore/query"
+	ds "github.com/bdware/go-datastore"
+	key "github.com/bdware/go-datastore/key"
+	dsq "github.com/bdware/go-datastore/query"
 )
 
 // MutexDatastore contains a child datastore and a mutex.
@@ -27,42 +28,42 @@ func (d *MutexDatastore) Children() []ds.Datastore {
 }
 
 // Put implements Datastore.Put
-func (d *MutexDatastore) Put(key ds.Key, value []byte) (err error) {
+func (d *MutexDatastore) Put(key key.Key, value []byte) (err error) {
 	d.Lock()
 	defer d.Unlock()
 	return d.child.Put(key, value)
 }
 
 // Sync implements Datastore.Sync
-func (d *MutexDatastore) Sync(prefix ds.Key) error {
+func (d *MutexDatastore) Sync(prefix key.Key) error {
 	d.Lock()
 	defer d.Unlock()
 	return d.child.Sync(prefix)
 }
 
 // Get implements Datastore.Get
-func (d *MutexDatastore) Get(key ds.Key) (value []byte, err error) {
+func (d *MutexDatastore) Get(key key.Key) (value []byte, err error) {
 	d.RLock()
 	defer d.RUnlock()
 	return d.child.Get(key)
 }
 
 // Has implements Datastore.Has
-func (d *MutexDatastore) Has(key ds.Key) (exists bool, err error) {
+func (d *MutexDatastore) Has(key key.Key) (exists bool, err error) {
 	d.RLock()
 	defer d.RUnlock()
 	return d.child.Has(key)
 }
 
 // GetSize implements Datastore.GetSize
-func (d *MutexDatastore) GetSize(key ds.Key) (size int, err error) {
+func (d *MutexDatastore) GetSize(key key.Key) (size int, err error) {
 	d.RLock()
 	defer d.RUnlock()
 	return d.child.GetSize(key)
 }
 
 // Delete implements Datastore.Delete
-func (d *MutexDatastore) Delete(key ds.Key) (err error) {
+func (d *MutexDatastore) Delete(key key.Key) (err error) {
 	d.Lock()
 	defer d.Unlock()
 	return d.child.Delete(key)
@@ -128,13 +129,13 @@ type syncBatch struct {
 	mds   *MutexDatastore
 }
 
-func (b *syncBatch) Put(key ds.Key, val []byte) error {
+func (b *syncBatch) Put(key key.Key, val []byte) error {
 	b.mds.Lock()
 	defer b.mds.Unlock()
 	return b.batch.Put(key, val)
 }
 
-func (b *syncBatch) Delete(key ds.Key) error {
+func (b *syncBatch) Delete(key key.Key) error {
 	b.mds.Lock()
 	defer b.mds.Unlock()
 	return b.batch.Delete(key)

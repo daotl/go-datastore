@@ -5,8 +5,9 @@ import (
 	"runtime"
 	"testing"
 
-	dstore "github.com/ipfs/go-datastore"
-	query "github.com/ipfs/go-datastore/query"
+	dstore "github.com/bdware/go-datastore"
+	key "github.com/bdware/go-datastore/key"
+	query "github.com/bdware/go-datastore/query"
 )
 
 // BasicSubtests is a list of all basic tests.
@@ -44,7 +45,7 @@ func clearDs(t *testing.T, ds dstore.Datastore) {
 		t.Fatal(err)
 	}
 	for _, r := range res {
-		if err := ds.Delete(dstore.RawKey(r.Key)); err != nil {
+		if err := ds.Delete(key.RawStrKey(r.Key)); err != nil {
 			t.Fatal(err)
 		}
 	}

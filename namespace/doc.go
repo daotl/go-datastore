@@ -6,19 +6,20 @@
 //  import (
 //    "fmt"
 //
-//    ds "github.com/ipfs/go-datastore"
-//    nsds "github.com/ipfs/go-datastore/namespace"
+//    ds "github.com/bdware/go-datastore"
+//    key "github.com/bdware/go-datastore/key"
+//    nsds "github.com/bdware/go-datastore/namespace"
 //  )
 //
 //  func main() {
 //    mp := ds.NewMapDatastore()
-//    ns := nsds.Wrap(mp, ds.NewKey("/foo/bar"))
+//    ns := nsds.Wrap(mp, key.NewStrKey("/foo/bar"))
 //
 //    // in the Namespace Datastore:
-//    ns.Put(ds.NewKey("/beep"), "boop")
-//    v2, _ := ns.Get(ds.NewKey("/beep")) // v2 == "boop"
+//    ns.Put(key.NewStrKey("/beep"), "boop")
+//    v2, _ := ns.Get(key.NewStrKey("/beep")) // v2 == "boop"
 //
 //    // and, in the underlying MapDatastore:
-//    v3, _ := mp.Get(ds.NewKey("/foo/bar/beep")) // v3 == "boop"
+//    v3, _ := mp.Get(key.NewStrKey("/foo/bar/beep")) // v3 == "boop"
 //  }
 package namespace

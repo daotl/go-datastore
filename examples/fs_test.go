@@ -6,8 +6,9 @@ import (
 
 	. "gopkg.in/check.v1"
 
-	ds "github.com/ipfs/go-datastore"
-	query "github.com/ipfs/go-datastore/query"
+	ds "github.com/bdware/go-datastore"
+	key "github.com/bdware/go-datastore/key"
+	query "github.com/bdware/go-datastore/query"
 )
 
 // Hook up gocheck into the "go test" runner.
@@ -113,10 +114,10 @@ func (ks *DSSuite) TestDiskUsage(c *C) {
 	}
 }
 
-func strsToKeys(strs []string) []ds.Key {
-	keys := make([]ds.Key, len(strs))
+func strsToKeys(strs []string) []key.Key {
+	keys := make([]key.Key, len(strs))
 	for i, s := range strs {
-		keys[i] = ds.NewKey(s)
+		keys[i] = key.NewStrKey(s)
 	}
 	return keys
 }

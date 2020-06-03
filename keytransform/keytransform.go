@@ -1,8 +1,9 @@
 package keytransform
 
 import (
-	ds "github.com/ipfs/go-datastore"
-	dsq "github.com/ipfs/go-datastore/query"
+	ds "github.com/bdware/go-datastore"
+	key "github.com/bdware/go-datastore/key"
+	dsq "github.com/bdware/go-datastore/query"
 )
 
 // Wrap wraps a given datastore with a KeyTransform function.
@@ -33,34 +34,34 @@ func (d *Datastore) Children() []ds.Datastore {
 }
 
 // Put stores the given value, transforming the key first.
-func (d *Datastore) Put(key ds.Key, value []byte) (err error) {
+func (d *Datastore) Put(key key.Key, value []byte) (err error) {
 	return d.child.Put(d.ConvertKey(key), value)
 }
 
 // Sync implements Datastore.Sync
-func (d *Datastore) Sync(prefix ds.Key) error {
+func (d *Datastore) Sync(prefix key.Key) error {
 	return d.child.Sync(d.ConvertKey(prefix))
 }
 
 // Get returns the value for given key, transforming the key first.
-func (d *Datastore) Get(key ds.Key) (value []byte, err error) {
+func (d *Datastore) Get(key key.Key) (value []byte, err error) {
 	return d.child.Get(d.ConvertKey(key))
 }
 
 // Has returns whether the datastore has a value for a given key, transforming
 // the key first.
-func (d *Datastore) Has(key ds.Key) (exists bool, err error) {
+func (d *Datastore) Has(key key.Key) (exists bool, err error) {
 	return d.child.Has(d.ConvertKey(key))
 }
 
 // GetSize returns the size of the value named by the given key, transforming
 // the key first.
-func (d *Datastore) GetSize(key ds.Key) (size int, err error) {
+func (d *Datastore) GetSize(key key.Key) (size int, err error) {
 	return d.child.GetSize(d.ConvertKey(key))
 }
 
 // Delete removes the value for given key
-func (d *Datastore) Delete(key ds.Key) (err error) {
+func (d *Datastore) Delete(key key.Key) (err error) {
 	return d.child.Delete(d.ConvertKey(key))
 }
 
@@ -80,7 +81,7 @@ func (d *Datastore) Query(q dsq.Query) (dsq.Results, error) {
 				return r, false
 			}
 			if r.Error == nil {
-				r.Entry.Key = d.InvertKey(ds.RawKey(r.Entry.Key)).String()
+				r.Entry.Key = d.InvertKey(key.RawStrKey(r.Entry.Key)).String()
 			}
 			return r, true
 		},
@@ -100,7 +101,7 @@ func (d *Datastore) prepareQuery(q dsq.Query) (naive, child dsq.Query) {
 	child = q
 
 	// Always let the child handle the key prefix.
-	child.Prefix = d.ConvertKey(ds.NewKey(child.Prefix)).String()
+	child.Prefix = d.ConvertKey(key.NewStrKey(child.Prefix)).String()
 
 	// Check if the key transform is order-preserving so we can use the
 	// child datastore's built-in ordering.
@@ -156,23 +157,23 @@ orders:
 		case dsq.FilterKeyCompare:
 			child.Filters[i] = dsq.FilterKeyCompare{
 				Op:  f.Op,
-				Key: d.ConvertKey(ds.NewKey(f.Key)).String(),
+				Key: d.ConvertKey(key.NewStrKey(f.Key)).String(),
 			}
 			continue
 		case *dsq.FilterKeyCompare:
 			child.Filters[i] = &dsq.FilterKeyCompare{
 				Op:  f.Op,
-				Key: d.ConvertKey(ds.NewKey(f.Key)).String(),
+				Key: d.ConvertKey(key.NewStrKey(f.Key)).String(),
 			}
 			continue
 		case dsq.FilterKeyPrefix:
 			child.Filters[i] = dsq.FilterKeyPrefix{
-				Prefix: d.ConvertKey(ds.NewKey(f.Prefix)).String(),
+				Prefix: d.ConvertKey(key.NewStrKey(f.Prefix)).String(),
 			}
 			continue
 		case *dsq.FilterKeyPrefix:
 			child.Filters[i] = &dsq.FilterKeyPrefix{
-				Prefix: d.ConvertKey(ds.NewKey(f.Prefix)).String(),
+				Prefix: d.ConvertKey(key.NewStrKey(f.Prefix)).String(),
 			}
 			continue
 		}
@@ -220,11 +221,11 @@ type transformBatch struct {
 	f KeyMapping
 }
 
-func (t *transformBatch) Put(key ds.Key, val []byte) error {
+func (t *transformBatch) Put(key key.Key, val []byte) error {
 	return t.dst.Put(t.f(key), val)
 }
 
-func (t *transformBatch) Delete(key ds.Key) error {
+func (t *transformBatch) Delete(key key.Key) error {
 	return t.dst.Delete(t.f(key))
 }
 

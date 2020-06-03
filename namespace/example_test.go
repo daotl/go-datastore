@@ -3,15 +3,16 @@ package namespace_test
 import (
 	"fmt"
 
-	ds "github.com/ipfs/go-datastore"
-	nsds "github.com/ipfs/go-datastore/namespace"
+	ds "github.com/bdware/go-datastore"
+	key "github.com/bdware/go-datastore/key"
+	nsds "github.com/bdware/go-datastore/namespace"
 )
 
 func Example() {
 	mp := ds.NewMapDatastore()
-	ns := nsds.Wrap(mp, ds.NewKey("/foo/bar"))
+	ns := nsds.Wrap(mp, key.NewStrKey("/foo/bar"))
 
-	k := ds.NewKey("/beep")
+	k := key.NewStrKey("/beep")
 	v := "boop"
 
 	if err := ns.Put(k, []byte(v)); err != nil {
@@ -22,7 +23,7 @@ func Example() {
 	v2, _ := ns.Get(k)
 	fmt.Printf("ns.Get %s -> %s\n", k, v2)
 
-	k3 := ds.NewKey("/foo/bar/beep")
+	k3 := key.NewStrKey("/foo/bar/beep")
 	v3, _ := mp.Get(k3)
 	fmt.Printf("mp.Get %s -> %s\n", k3, v3)
 	// Output:

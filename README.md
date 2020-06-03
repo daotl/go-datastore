@@ -28,17 +28,14 @@ Datastore is a generic layer of abstraction for data store and database access. 
 
 In addition, grouped datastores significantly simplify interesting data access patterns (such as caching and sharding).
 
+This fork adds support for bytes-backed keys in addition to existing string-backed keys.
+
 Based on [datastore.py](https://github.com/datastore/datastore).
 
 ## Install
 
 ```sh
 go get github.com/bdware/go-datastore
-```
-
-Add the following lines to your `go.mod`:
-```
-replace github.com/ipfs/go-datastore => github.com/bdware/go-datastore {{VERSION}}
 ```
 
 ## Documentation

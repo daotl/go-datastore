@@ -6,9 +6,9 @@ import (
 	"io/ioutil"
 	"os"
 
-	fuzzer "github.com/ipfs/go-datastore/fuzz"
-
 	"github.com/spf13/pflag"
+
+	fuzzer "github.com/bdware/go-datastore/fuzz"
 )
 
 var input *string = pflag.StringP("input", "i", "", "file to read input from (stdin used if not specified)")

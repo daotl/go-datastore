@@ -7,8 +7,8 @@
 // its inverse. For example:
 //
 //   import (
-//     ktds "github.com/ipfs/go-datastore/keytransform"
-//     ds "github.com/ipfs/go-datastore"
+//     ktds "github.com/bdware/go-datastore/keytransform"
+//     ds "github.com/bdware/go-datastore"
 //   )
 //
 //   func reverseKey(k ds.Key) ds.Key {

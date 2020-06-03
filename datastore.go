@@ -5,7 +5,8 @@ import (
 	"io"
 	"time"
 
-	query "github.com/ipfs/go-datastore/query"
+	key "github.com/bdware/go-datastore/key"
+	query "github.com/bdware/go-datastore/query"
 )
 
 /*
@@ -40,7 +41,7 @@ type Datastore interface {
 	// satisfy these requirements then Sync may be a no-op.
 	//
 	// If the prefix fails to Sync this method returns an error.
-	Sync(prefix Key) error
+	Sync(prefix key.Key) error
 	io.Closer
 }
 
@@ -55,29 +56,29 @@ type Write interface {
 	// Ultimately, the lowest-level datastore will need to do some value checking
 	// or risk getting incorrect values. It may also be useful to expose a more
 	// type-safe interface to your application, and do the checking up-front.
-	Put(key Key, value []byte) error
+	Put(key key.Key, value []byte) error
 
 	// Delete removes the value for given `key`. If the key is not in the
 	// datastore, this method returns no error.
-	Delete(key Key) error
+	Delete(key key.Key) error
 }
 
 // Read is the read-side of the Datastore interface.
 type Read interface {
 	// Get retrieves the object `value` named by `key`.
 	// Get will return ErrNotFound if the key is not mapped to a value.
-	Get(key Key) (value []byte, err error)
+	Get(key key.Key) (value []byte, err error)
 
 	// Has returns whether the `key` is mapped to a `value`.
 	// In some contexts, it may be much cheaper only to check for existence of
 	// a value, rather than retrieving the value itself. (e.g. HTTP HEAD).
 	// The default implementation is found in `GetBackedHas`.
-	Has(key Key) (exists bool, err error)
+	Has(key key.Key) (exists bool, err error)
 
 	// GetSize returns the size of the `value` named by `key`.
 	// In some contexts, it may be much cheaper to only get the size of the
 	// value rather than retrieving the value itself.
-	GetSize(key Key) (size int, err error)
+	GetSize(key key.Key) (size int, err error)
 
 	// Query searches the datastore and returns a query result. This function
 	// may return before the query actually runs. To wait for the query:
@@ -164,9 +165,9 @@ type TTLDatastore interface {
 
 // TTL encapulates the methods that deal with entries with time-to-live.
 type TTL interface {
-	PutWithTTL(key Key, value []byte, ttl time.Duration) error
-	SetTTL(key Key, ttl time.Duration) error
-	GetExpiration(key Key) (time.Time, error)
+	PutWithTTL(key key.Key, value []byte, ttl time.Duration) error
+	SetTTL(key key.Key, ttl time.Duration) error
+	GetExpiration(key key.Key) (time.Time, error)
 }
 
 // Txn extends the Datastore type. Txns allow users to batch queries and
@@ -218,7 +219,7 @@ var ErrNotFound error = &dsError{error: errors.New("datastore: key not found"), 
 // func (*d SomeDatastore) Has(key Key) (exists bool, err error) {
 //   return GetBackedHas(d, key)
 // }
-func GetBackedHas(ds Read, key Key) (bool, error) {
+func GetBackedHas(ds Read, key key.Key) (bool, error) {
 	_, err := ds.Get(key)
 	switch err {
 	case nil:
@@ -236,7 +237,7 @@ func GetBackedHas(ds Read, key Key) (bool, error) {
 // func (*d SomeDatastore) GetSize(key Key) (size int, err error) {
 //   return GetBackedSize(d, key)
 // }
-func GetBackedSize(ds Read, key Key) (int, error) {
+func GetBackedSize(ds Read, key key.Key) (int, error) {
 	value, err := ds.Get(key)
 	if err == nil {
 		return len(value), nil

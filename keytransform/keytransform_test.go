@@ -7,10 +7,11 @@ import (
 
 	. "gopkg.in/check.v1"
 
-	ds "github.com/ipfs/go-datastore"
-	kt "github.com/ipfs/go-datastore/keytransform"
-	dsq "github.com/ipfs/go-datastore/query"
-	dstest "github.com/ipfs/go-datastore/test"
+	ds "github.com/bdware/go-datastore"
+	key "github.com/bdware/go-datastore/key"
+	kt "github.com/bdware/go-datastore/keytransform"
+	dsq "github.com/bdware/go-datastore/query"
+	dstest "github.com/bdware/go-datastore/test"
 )
 
 // Hook up gocheck into the "go test" runner.
@@ -21,16 +22,16 @@ type DSSuite struct{}
 var _ = Suite(&DSSuite{})
 
 var pair = &kt.Pair{
-	Convert: func(k ds.Key) ds.Key {
-		return ds.NewKey("/abc").Child(k)
+	Convert: func(k key.Key) key.Key {
+		return key.NewStrKey("/abc").Child(k)
 	},
-	Invert: func(k ds.Key) ds.Key {
+	Invert: func(k key.Key) key.Key {
 		// remove abc prefix
 		l := k.List()
 		if l[0] != "abc" {
 			panic("key does not have prefix. convert failed?")
 		}
-		return ds.KeyWithNamespaces(l[1:])
+		return key.KeyWithNamespaces(l[1:])
 	},
 }
 
@@ -57,19 +58,19 @@ func (ks *DSSuite) TestBasic(c *C) {
 		c.Check(err, Equals, nil)
 		c.Check(bytes.Equal(v1, []byte(k.String())), Equals, true)
 
-		v2, err := mpds.Get(ds.NewKey("abc").Child(k))
+		v2, err := mpds.Get(key.NewStrKey("abc").Child(k))
 		c.Check(err, Equals, nil)
 		c.Check(bytes.Equal(v2, []byte(k.String())), Equals, true)
 	}
 
-	run := func(d ds.Datastore, q dsq.Query) []ds.Key {
+	run := func(d ds.Datastore, q dsq.Query) []key.Key {
 		r, err := d.Query(q)
 		c.Check(err, Equals, nil)
 
 		e, err := r.Rest()
 		c.Check(err, Equals, nil)
 
-		return ds.EntryKeys(e)
+		return key.EntryKeys(e)
 	}
 
 	listA := run(mpds, dsq.Query{})
@@ -77,8 +78,8 @@ func (ks *DSSuite) TestBasic(c *C) {
 	c.Check(len(listA), Equals, len(listB))
 
 	// sort them cause yeah.
-	sort.Sort(ds.KeySlice(listA))
-	sort.Sort(ds.KeySlice(listB))
+	sort.Sort(key.KeySlice(listA))
+	sort.Sort(key.KeySlice(listB))
 
 	for i, kA := range listA {
 		kB := listB[i]
@@ -102,10 +103,10 @@ func (ks *DSSuite) TestBasic(c *C) {
 	}
 }
 
-func strsToKeys(strs []string) []ds.Key {
-	keys := make([]ds.Key, len(strs))
+func strsToKeys(strs []string) []key.Key {
+	keys := make([]key.Key, len(strs))
 	for i, s := range strs {
-		keys[i] = ds.NewKey(s)
+		keys[i] = key.NewStrKey(s)
 	}
 	return keys
 }
@@ -118,6 +119,6 @@ func TestSuiteDefaultPair(t *testing.T) {
 
 func TestSuitePrefixTransform(t *testing.T) {
 	mpds := dstest.NewTestDatastore(true)
-	ktds := kt.Wrap(mpds, kt.PrefixTransform{Prefix: ds.NewKey("/foo")})
+	ktds := kt.Wrap(mpds, kt.PrefixTransform{Prefix: key.NewStrKey("/foo")})
 	dstest.SubtestAll(t, ktds)
 }

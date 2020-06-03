@@ -7,10 +7,11 @@ import (
 
 	. "gopkg.in/check.v1"
 
-	ds "github.com/ipfs/go-datastore"
-	ns "github.com/ipfs/go-datastore/namespace"
-	dsq "github.com/ipfs/go-datastore/query"
-	dstest "github.com/ipfs/go-datastore/test"
+	ds "github.com/bdware/go-datastore"
+	key "github.com/bdware/go-datastore/key"
+	ns "github.com/bdware/go-datastore/namespace"
+	dsq "github.com/bdware/go-datastore/query"
+	dstest "github.com/bdware/go-datastore/test"
 )
 
 // Hook up gocheck into the "go test" runner.
@@ -28,7 +29,7 @@ func (ks *DSSuite) TestBasic(c *C) {
 func (ks *DSSuite) testBasic(c *C, prefix string) {
 
 	mpds := ds.NewMapDatastore()
-	nsds := ns.Wrap(mpds, ds.NewKey(prefix))
+	nsds := ns.Wrap(mpds, key.NewStrKey(prefix))
 
 	keys := strsToKeys([]string{
 		"foo",
@@ -49,19 +50,19 @@ func (ks *DSSuite) testBasic(c *C, prefix string) {
 		c.Check(err, Equals, nil)
 		c.Check(bytes.Equal(v1, []byte(k.String())), Equals, true)
 
-		v2, err := mpds.Get(ds.NewKey(prefix).Child(k))
+		v2, err := mpds.Get(key.NewStrKey(prefix).Child(k))
 		c.Check(err, Equals, nil)
 		c.Check(bytes.Equal(v2, []byte(k.String())), Equals, true)
 	}
 
-	run := func(d ds.Datastore, q dsq.Query) []ds.Key {
+	run := func(d ds.Datastore, q dsq.Query) []key.Key {
 		r, err := d.Query(q)
 		c.Check(err, Equals, nil)
 
 		e, err := r.Rest()
 		c.Check(err, Equals, nil)
 
-		return ds.EntryKeys(e)
+		return key.EntryKeys(e)
 	}
 
 	listA := run(mpds, dsq.Query{})
@@ -69,8 +70,8 @@ func (ks *DSSuite) testBasic(c *C, prefix string) {
 	c.Check(len(listA), Equals, len(listB))
 
 	// sort them cause yeah.
-	sort.Sort(ds.KeySlice(listA))
-	sort.Sort(ds.KeySlice(listB))
+	sort.Sort(key.KeySlice(listA))
+	sort.Sort(key.KeySlice(listB))
 
 	for i, kA := range listA {
 		kB := listB[i]
@@ -81,7 +82,7 @@ func (ks *DSSuite) testBasic(c *C, prefix string) {
 
 func (ks *DSSuite) TestQuery(c *C) {
 	mpds := dstest.NewTestDatastore(true)
-	nsds := ns.Wrap(mpds, ds.NewKey("/foo"))
+	nsds := ns.Wrap(mpds, key.NewStrKey("/foo"))
 
 	keys := strsToKeys([]string{
 		"abc/foo",
@@ -147,16 +148,16 @@ func (ks *DSSuite) TestQuery(c *C) {
 	}
 }
 
-func strsToKeys(strs []string) []ds.Key {
-	keys := make([]ds.Key, len(strs))
+func strsToKeys(strs []string) []key.Key {
+	keys := make([]key.Key, len(strs))
 	for i, s := range strs {
-		keys[i] = ds.NewKey(s)
+		keys[i] = key.NewStrKey(s)
 	}
 	return keys
 }
 
 func TestSuite(t *testing.T) {
 	mpds := dstest.NewTestDatastore(true)
-	nsds := ns.Wrap(mpds, ds.NewKey("/foo"))
+	nsds := ns.Wrap(mpds, key.NewStrKey("/foo"))
 	dstest.SubtestAll(t, nsds)
 }

@@ -1,8 +1,9 @@
 package namespace
 
 import (
-	ds "github.com/ipfs/go-datastore"
-	ktds "github.com/ipfs/go-datastore/keytransform"
+	ds "github.com/bdware/go-datastore"
+	key "github.com/bdware/go-datastore/key"
+	ktds "github.com/bdware/go-datastore/keytransform"
 )
 
 // PrefixTransform constructs a KeyTransform with a pair of functions that
@@ -12,12 +13,12 @@ import (
 // to avoid insidious data inconsistency errors.
 //
 // DEPRECATED: Use ktds.PrefixTransform directly.
-func PrefixTransform(prefix ds.Key) ktds.PrefixTransform {
+func PrefixTransform(prefix key.Key) ktds.PrefixTransform {
 	return ktds.PrefixTransform{Prefix: prefix}
 }
 
 // Wrap wraps a given datastore with a key-prefix.
-func Wrap(child ds.Datastore, prefix ds.Key) *ktds.Datastore {
+func Wrap(child ds.Datastore, prefix key.Key) *ktds.Datastore {
 	if child == nil {
 		panic("child (ds.Datastore) is nil")
 	}

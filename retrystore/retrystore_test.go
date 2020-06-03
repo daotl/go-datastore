@@ -5,8 +5,9 @@ import (
 	"strings"
 	"testing"
 
-	ds "github.com/ipfs/go-datastore"
-	failstore "github.com/ipfs/go-datastore/failstore"
+	ds "github.com/bdware/go-datastore"
+	failstore "github.com/bdware/go-datastore/failstore"
+	key "github.com/bdware/go-datastore/key"
 )
 
 func TestRetryFailure(t *testing.T) {
@@ -25,7 +26,7 @@ func TestRetryFailure(t *testing.T) {
 		},
 	}
 
-	k := ds.NewKey("test")
+	k := key.NewStrKey("test")
 
 	_, err := rds.Get(k)
 	if err == nil {
@@ -55,7 +56,7 @@ func TestRealErrorGetsThrough(t *testing.T) {
 		},
 	}
 
-	k := ds.NewKey("test")
+	k := key.NewStrKey("test")
 	_, err := rds.Get(k)
 	if err != myErr {
 		t.Fatal("expected my own error")
@@ -93,7 +94,7 @@ func TestRealErrorAfterTemp(t *testing.T) {
 		},
 	}
 
-	k := ds.NewKey("test")
+	k := key.NewStrKey("test")
 	_, err := rds.Get(k)
 	if err != myErr {
 		t.Fatal("expected my own error")
@@ -120,7 +121,7 @@ func TestSuccessAfterTemp(t *testing.T) {
 		},
 	}
 
-	k := ds.NewKey("test")
+	k := key.NewStrKey("test")
 	val := []byte("foo")
 
 	err := rds.Put(k, val)

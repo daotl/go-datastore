@@ -1,13 +1,13 @@
 package keytransform
 
-import ds "github.com/ipfs/go-datastore"
+import key "github.com/bdware/go-datastore/key"
 
 // KeyMapping is a function that maps one key to annother
-type KeyMapping func(ds.Key) ds.Key
+type KeyMapping func(key.Key) key.Key
 
 // KeyTransform is an object with a pair of functions for (invertibly)
 // transforming keys
 type KeyTransform interface {
-	ConvertKey(ds.Key) ds.Key
-	InvertKey(ds.Key) ds.Key
+	ConvertKey(key.Key) key.Key
+	InvertKey(key.Key) key.Key
 }

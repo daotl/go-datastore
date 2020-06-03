@@ -5,8 +5,8 @@ import (
 	"log"
 	"testing"
 
-	dstore "github.com/ipfs/go-datastore"
-	dstest "github.com/ipfs/go-datastore/test"
+	dstore "github.com/bdware/go-datastore"
+	dstest "github.com/bdware/go-datastore/test"
 )
 
 func TestMapDatastore(t *testing.T) {

@@ -10,10 +10,11 @@ import (
 	"strings"
 	"sync"
 
-	ds "github.com/ipfs/go-datastore"
-	"github.com/ipfs/go-datastore/query"
-
 	"go.uber.org/multierr"
+
+	ds "github.com/bdware/go-datastore"
+	key "github.com/bdware/go-datastore/key"
+	query "github.com/bdware/go-datastore/query"
 )
 
 var (
@@ -23,7 +24,7 @@ var (
 // Mount defines a datastore mount. It mounts the given datastore at the given
 // prefix.
 type Mount struct {
-	Prefix    ds.Key
+	Prefix    key.Key
 	Datastore ds.Datastore
 }
 
@@ -70,19 +71,19 @@ type Datastore struct {
 var _ ds.Datastore = (*Datastore)(nil)
 
 // lookup looks up the datastore in which the given key lives.
-func (d *Datastore) lookup(key ds.Key) (ds.Datastore, ds.Key, ds.Key) {
+func (d *Datastore) lookup(k key.Key) (ds.Datastore, key.Key, key.Key) {
 	for _, m := range d.mounts {
-		if m.Prefix.IsAncestorOf(key) {
-			s := strings.TrimPrefix(key.String(), m.Prefix.String())
-			k := ds.NewKey(s)
-			return m.Datastore, m.Prefix, k
+		if m.Prefix.IsAncestorOf(k) {
+			s := strings.TrimPrefix(k.String(), m.Prefix.String())
+			found := key.NewStrKey(s)
+			return m.Datastore, m.Prefix, found
 		}
 	}
-	return nil, ds.NewKey("/"), key
+	return nil, key.NewStrKey("/"), k
 }
 
 type queryResults struct {
-	mount   ds.Key
+	mount   key.Key
 	results query.Results
 	next    query.Result
 }
@@ -105,7 +106,7 @@ func (qr *queryResults) advance() bool {
 		return false
 	}
 
-	r.Key = qr.mount.Child(ds.RawKey(r.Key)).String()
+	r.Key = qr.mount.Child(key.RawStrKey(r.Key)).String()
 	qr.next = r
 	return true
 }
@@ -154,7 +155,7 @@ func (h *querySet) close() error {
 	return nil
 }
 
-func (h *querySet) addResults(mount ds.Key, results query.Results) {
+func (h *querySet) addResults(mount key.Key, results query.Results) {
 	r := &queryResults{
 		results: results,
 		mount:   mount,
@@ -206,18 +207,18 @@ func (h *querySet) next() (query.Result, bool) {
 // * /foo/bar  -> ([/foo/bar], [/])                         # /foo/bar
 // * /bar/foo  -> ([/bar], [/foo])                          # the datastore mounted at /bar, rest is /foo
 // * /ba       -> ([/], [/])                                # the root; only full components are matched.
-func (d *Datastore) lookupAll(key ds.Key) (dst []ds.Datastore, mountpoint, rest []ds.Key) {
+func (d *Datastore) lookupAll(k key.Key) (dst []ds.Datastore, mountpoint, rest []key.Key) {
 	for _, m := range d.mounts {
-		if m.Prefix.IsDescendantOf(key) {
+		if m.Prefix.IsDescendantOf(k) {
 			dst = append(dst, m.Datastore)
 			mountpoint = append(mountpoint, m.Prefix)
-			rest = append(rest, ds.NewKey("/"))
-		} else if m.Prefix.Equal(key) || m.Prefix.IsAncestorOf(key) {
-			r := strings.TrimPrefix(key.String(), m.Prefix.String())
+			rest = append(rest, key.NewStrKey("/"))
+		} else if m.Prefix.Equal(k) || m.Prefix.IsAncestorOf(k) {
+			r := strings.TrimPrefix(k.String(), m.Prefix.String())
 
 			dst = append(dst, m.Datastore)
 			mountpoint = append(mountpoint, m.Prefix)
-			rest = append(rest, ds.NewKey(r))
+			rest = append(rest, key.NewStrKey(r))
 
 			// We've found an ancestor (or equal) key. We might have
 			// more general datastores, but they won't contain keys
@@ -232,7 +233,7 @@ func (d *Datastore) lookupAll(key ds.Key) (dst []ds.Datastore, mountpoint, rest 
 //
 // Returns ErrNoMount if there no datastores are mounted at the appropriate
 // prefix for the given key.
-func (d *Datastore) Put(key ds.Key, value []byte) error {
+func (d *Datastore) Put(key key.Key, value []byte) error {
 	cds, _, k := d.lookup(key)
 	if cds == nil {
 		return ErrNoMount
@@ -241,7 +242,7 @@ func (d *Datastore) Put(key ds.Key, value []byte) error {
 }
 
 // Sync implements Datastore.Sync
-func (d *Datastore) Sync(prefix ds.Key) error {
+func (d *Datastore) Sync(prefix key.Key) error {
 	var merr error
 
 	// Sync all mount points below the prefix
@@ -261,7 +262,7 @@ func (d *Datastore) Sync(prefix ds.Key) error {
 }
 
 // Get returns the value associated with the key from the appropriate datastore.
-func (d *Datastore) Get(key ds.Key) (value []byte, err error) {
+func (d *Datastore) Get(key key.Key) (value []byte, err error) {
 	cds, _, k := d.lookup(key)
 	if cds == nil {
 		return nil, ds.ErrNotFound
@@ -271,7 +272,7 @@ func (d *Datastore) Get(key ds.Key) (value []byte, err error) {
 
 // Has returns the true if there exists a value associated with key in the
 // appropriate datastore.
-func (d *Datastore) Has(key ds.Key) (exists bool, err error) {
+func (d *Datastore) Has(key key.Key) (exists bool, err error) {
 	cds, _, k := d.lookup(key)
 	if cds == nil {
 		return false, nil
@@ -281,7 +282,7 @@ func (d *Datastore) Has(key ds.Key) (exists bool, err error) {
 
 // Get returns the size of the value associated with the key in the appropriate
 // datastore.
-func (d *Datastore) GetSize(key ds.Key) (size int, err error) {
+func (d *Datastore) GetSize(key key.Key) (size int, err error) {
 	cds, _, k := d.lookup(key)
 	if cds == nil {
 		return -1, ds.ErrNotFound
@@ -293,7 +294,7 @@ func (d *Datastore) GetSize(key ds.Key) (size int, err error) {
 // datastore.
 //
 // Delete returns no error if there is no value associated with the given key.
-func (d *Datastore) Delete(key ds.Key) error {
+func (d *Datastore) Delete(key key.Key) error {
 	cds, _, k := d.lookup(key)
 	if cds == nil {
 		return nil
@@ -315,7 +316,7 @@ func (d *Datastore) Query(master query.Query) (query.Results, error) {
 		ReturnsSizes:      master.ReturnsSizes,
 	}
 
-	prefix := ds.NewKey(childQuery.Prefix)
+	prefix := key.NewStrKey(childQuery.Prefix)
 	dses, mounts, rests := d.lookupAll(prefix)
 
 	queries := &querySet{
@@ -413,28 +414,28 @@ func (d *Datastore) Batch() (ds.Batch, error) {
 	}, nil
 }
 
-func (mt *mountBatch) lookupBatch(key ds.Key) (ds.Batch, ds.Key, error) {
+func (mt *mountBatch) lookupBatch(k key.Key) (ds.Batch, key.Key, error) {
 	mt.lk.Lock()
 	defer mt.lk.Unlock()
 
-	child, loc, rest := mt.d.lookup(key)
+	child, loc, rest := mt.d.lookup(k)
 	t, ok := mt.mounts[loc.String()]
 	if !ok {
 		bds, ok := child.(ds.Batching)
 		if !ok {
-			return nil, ds.NewKey(""), ds.ErrBatchUnsupported
+			return nil, key.NewStrKey(""), ds.ErrBatchUnsupported
 		}
 		var err error
 		t, err = bds.Batch()
 		if err != nil {
-			return nil, ds.NewKey(""), err
+			return nil, key.NewStrKey(""), err
 		}
 		mt.mounts[loc.String()] = t
 	}
 	return t, rest, nil
 }
 
-func (mt *mountBatch) Put(key ds.Key, val []byte) error {
+func (mt *mountBatch) Put(key key.Key, val []byte) error {
 	t, rest, err := mt.lookupBatch(key)
 	if err != nil {
 		return err
@@ -443,7 +444,7 @@ func (mt *mountBatch) Put(key ds.Key, val []byte) error {
 	return t.Put(rest, val)
 }
 
-func (mt *mountBatch) Delete(key ds.Key) error {
+func (mt *mountBatch) Delete(key key.Key) error {
 	t, rest, err := mt.lookupBatch(key)
 	if err != nil {
 		return err

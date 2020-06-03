@@ -1,7 +1,7 @@
 package fuzzer
 
 import (
-	ds "github.com/ipfs/go-datastore"
+	ds "github.com/bdware/go-datastore"
 	prov "github.com/ipfs/go-ds-flatfs"
 )
 

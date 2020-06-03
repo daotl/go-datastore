@@ -9,8 +9,9 @@ import (
 	"sync"
 	"sync/atomic"
 
-	ds "github.com/ipfs/go-datastore"
-	dsq "github.com/ipfs/go-datastore/query"
+	ds "github.com/bdware/go-datastore"
+	key "github.com/bdware/go-datastore/key"
+	dsq "github.com/bdware/go-datastore/query"
 )
 
 //go:generate go run ./cmd/generate
@@ -46,7 +47,7 @@ type RunState struct {
 	wg            sync.WaitGroup
 	Cancel        context.CancelFunc
 
-	keyCache   [128]ds.Key
+	keyCache   [128]key.Key
 	cachedKeys int32
 	ctr        int32 //nolint:structcheck,unused
 }
@@ -67,7 +68,7 @@ func (r *RunState) TxnDB() ds.TxnDatastore {
 type threadState struct {
 	op
 	keyReady bool
-	key      ds.Key
+	key      key.Key
 	valReady bool
 	val      []byte
 	reader   ds.Read
@@ -93,7 +94,7 @@ func Open(driver string, location string, cleanup bool) (*RunState, error) {
 	if state.TxnDB() == nil {
 		state.opMax = opNewTX
 	}
-	state.keyCache[0] = ds.NewKey("/")
+	state.keyCache[0] = key.NewStrKey("/")
 	state.cachedKeys = 1
 
 	state.wg.Add(Threads)
@@ -324,7 +325,7 @@ func nextState(s *threadState, c byte) error {
 func reset(s *threadState) {
 	s.op = opNone
 	s.keyReady = false
-	s.key = ds.RawKey("")
+	s.key = key.RawStrKey("")
 	s.valReady = false
 }
 
@@ -338,7 +339,7 @@ func makeKey(s *threadState, c byte) error {
 		s.key = s.RunState.keyCache[(c>>1)%byte(keys)]
 		s.keyReady = true
 	} else {
-		s.key = ds.NewKey(fmt.Sprintf("key-%d", atomic.AddInt32(&s.ctr, 1)))
+		s.key = key.NewStrKey(fmt.Sprintf("key-%d", atomic.AddInt32(&s.ctr, 1)))
 		// half the time we'll make it a child of an existing key
 		if c&2 == 2 {
 			s.key = s.RunState.keyCache[(c>>1)%byte(keys)].Child(s.key)

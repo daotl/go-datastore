@@ -4,8 +4,9 @@
 package failstore
 
 import (
-	ds "github.com/ipfs/go-datastore"
-	dsq "github.com/ipfs/go-datastore/query"
+	ds "github.com/bdware/go-datastore"
+	key "github.com/bdware/go-datastore/key"
+	dsq "github.com/bdware/go-datastore/query"
 )
 
 // Failstore is a datastore which fails according to a user-provided
@@ -27,7 +28,7 @@ func NewFailstore(c ds.Datastore, efunc func(string) error) *Failstore {
 }
 
 // Put puts a key/value into the datastore.
-func (d *Failstore) Put(k ds.Key, val []byte) error {
+func (d *Failstore) Put(k key.Key, val []byte) error {
 	err := d.errfunc("put")
 	if err != nil {
 		return err
@@ -37,7 +38,7 @@ func (d *Failstore) Put(k ds.Key, val []byte) error {
 }
 
 // Sync implements Datastore.Sync
-func (d *Failstore) Sync(prefix ds.Key) error {
+func (d *Failstore) Sync(prefix key.Key) error {
 	err := d.errfunc("sync")
 	if err != nil {
 		return err
@@ -47,7 +48,7 @@ func (d *Failstore) Sync(prefix ds.Key) error {
 }
 
 // Get retrieves a value from the datastore.
-func (d *Failstore) Get(k ds.Key) ([]byte, error) {
+func (d *Failstore) Get(k key.Key) ([]byte, error) {
 	err := d.errfunc("get")
 	if err != nil {
 		return nil, err
@@ -57,7 +58,7 @@ func (d *Failstore) Get(k ds.Key) ([]byte, error) {
 }
 
 // Has returns if the datastore contains a key/value.
-func (d *Failstore) Has(k ds.Key) (bool, error) {
+func (d *Failstore) Has(k key.Key) (bool, error) {
 	err := d.errfunc("has")
 	if err != nil {
 		return false, err
@@ -67,7 +68,7 @@ func (d *Failstore) Has(k ds.Key) (bool, error) {
 }
 
 // GetSize returns the size of the value in the datastore, if present.
-func (d *Failstore) GetSize(k ds.Key) (int, error) {
+func (d *Failstore) GetSize(k key.Key) (int, error) {
 	err := d.errfunc("getsize")
 	if err != nil {
 		return -1, err
@@ -77,7 +78,7 @@ func (d *Failstore) GetSize(k ds.Key) (int, error) {
 }
 
 // Delete removes a key/value from the datastore.
-func (d *Failstore) Delete(k ds.Key) error {
+func (d *Failstore) Delete(k key.Key) error {
 	err := d.errfunc("delete")
 	if err != nil {
 		return err
@@ -133,7 +134,7 @@ func (d *Failstore) Batch() (ds.Batch, error) {
 }
 
 // Put does a batch put.
-func (b *FailBatch) Put(k ds.Key, val []byte) error {
+func (b *FailBatch) Put(k key.Key, val []byte) error {
 	if err := b.dstore.errfunc("batch-put"); err != nil {
 		return err
 	}
@@ -142,7 +143,7 @@ func (b *FailBatch) Put(k ds.Key, val []byte) error {
 }
 
 // Delete does a batch delete.
-func (b *FailBatch) Delete(k ds.Key) error {
+func (b *FailBatch) Delete(k key.Key) error {
 	if err := b.dstore.errfunc("batch-delete"); err != nil {
 		return err
 	}

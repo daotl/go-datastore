@@ -8,8 +8,9 @@ import (
 	"strings"
 	"testing"
 
-	dstore "github.com/ipfs/go-datastore"
-	dsq "github.com/ipfs/go-datastore/query"
+	dstore "github.com/bdware/go-datastore"
+	key "github.com/bdware/go-datastore/key"
+	dsq "github.com/bdware/go-datastore/query"
 )
 
 // ElemCount sets with how many elements the datastore suit
@@ -24,7 +25,7 @@ func TestElemCount(t *testing.T) {
 }
 
 func SubtestBasicPutGet(t *testing.T, ds dstore.Datastore) {
-	k := dstore.NewKey("foo")
+	k := key.NewStrKey("foo")
 	val := []byte("Hello Datastore!")
 
 	err := ds.Put(k, val)
@@ -103,7 +104,7 @@ func SubtestBasicPutGet(t *testing.T, ds dstore.Datastore) {
 }
 
 func SubtestNotFounds(t *testing.T, ds dstore.Datastore) {
-	badk := dstore.NewKey("notreal")
+	badk := key.NewStrKey("notreal")
 
 	val, err := ds.Get(badk)
 	if err != dstore.ErrNotFound {
@@ -188,31 +189,31 @@ func SubtestManyKeysAndQuery(t *testing.T, ds dstore.Datastore) {
 }
 
 func SubtestBasicSync(t *testing.T, ds dstore.Datastore) {
-	if err := ds.Sync(dstore.NewKey("prefix")); err != nil {
+	if err := ds.Sync(key.NewStrKey("prefix")); err != nil {
 		t.Fatal(err)
 	}
 
-	if err := ds.Put(dstore.NewKey("/prefix"), []byte("foo")); err != nil {
+	if err := ds.Put(key.NewStrKey("/prefix"), []byte("foo")); err != nil {
 		t.Fatal(err)
 	}
 
-	if err := ds.Sync(dstore.NewKey("/prefix")); err != nil {
+	if err := ds.Sync(key.NewStrKey("/prefix")); err != nil {
 		t.Fatal(err)
 	}
 
-	if err := ds.Put(dstore.NewKey("/prefix/sub"), []byte("bar")); err != nil {
+	if err := ds.Put(key.NewStrKey("/prefix/sub"), []byte("bar")); err != nil {
 		t.Fatal(err)
 	}
 
-	if err := ds.Sync(dstore.NewKey("/prefix")); err != nil {
+	if err := ds.Sync(key.NewStrKey("/prefix")); err != nil {
 		t.Fatal(err)
 	}
 
-	if err := ds.Sync(dstore.NewKey("/prefix/sub")); err != nil {
+	if err := ds.Sync(key.NewStrKey("/prefix/sub")); err != nil {
 		t.Fatal(err)
 	}
 
-	if err := ds.Sync(dstore.NewKey("")); err != nil {
+	if err := ds.Sync(key.NewStrKey("")); err != nil {
 		t.Fatal(err)
 	}
 }
@@ -385,7 +386,7 @@ func subtestQuery(t *testing.T, ds dstore.Datastore, q dsq.Query, count int) {
 	var input []dsq.Entry
 	for i := 0; i < count; i++ {
 		s := fmt.Sprintf("%dkey%d", i, i)
-		key := dstore.NewKey(s).String()
+		key := key.NewStrKey(s).String()
 		value := randValue()
 		input = append(input, dsq.Entry{
 			Key:   key,
@@ -396,7 +397,7 @@ func subtestQuery(t *testing.T, ds dstore.Datastore, q dsq.Query, count int) {
 
 	for i := 0; i < count; i++ {
 		s := fmt.Sprintf("/prefix/%dkey%d", i, i)
-		key := dstore.NewKey(s).String()
+		key := key.NewStrKey(s).String()
 		value := randValue()
 		input = append(input, dsq.Entry{
 			Key:   key,
@@ -407,7 +408,7 @@ func subtestQuery(t *testing.T, ds dstore.Datastore, q dsq.Query, count int) {
 
 	for i := 0; i < count; i++ {
 		s := fmt.Sprintf("/prefix/sub/%dkey%d", i, i)
-		key := dstore.NewKey(s).String()
+		key := key.NewStrKey(s).String()
 		value := randValue()
 		input = append(input, dsq.Entry{
 			Key:   key,
@@ -418,7 +419,7 @@ func subtestQuery(t *testing.T, ds dstore.Datastore, q dsq.Query, count int) {
 
 	for i := 0; i < count; i++ {
 		s := fmt.Sprintf("/capital/%dKEY%d", i, i)
-		key := dstore.NewKey(s).String()
+		key := key.NewStrKey(s).String()
 		value := randValue()
 		input = append(input, dsq.Entry{
 			Key:   key,
@@ -429,7 +430,7 @@ func subtestQuery(t *testing.T, ds dstore.Datastore, q dsq.Query, count int) {
 
 	t.Logf("putting %d values", len(input))
 	for i, e := range input {
-		err := ds.Put(dstore.RawKey(e.Key), e.Value)
+		err := ds.Put(key.RawStrKey(e.Key), e.Value)
 		if err != nil {
 			t.Fatalf("error on put[%d]: %s", i, err)
 		}
@@ -437,7 +438,7 @@ func subtestQuery(t *testing.T, ds dstore.Datastore, q dsq.Query, count int) {
 
 	t.Log("getting values back")
 	for i, e := range input {
-		val, err := ds.Get(dstore.RawKey(e.Key))
+		val, err := ds.Get(key.RawStrKey(e.Key))
 		if err != nil {
 			t.Fatalf("error on get[%d]: %s", i, err)
 		}
@@ -490,7 +491,7 @@ func subtestQuery(t *testing.T, ds dstore.Datastore, q dsq.Query, count int) {
 
 	t.Log("deleting all keys")
 	for _, e := range input {
-		if err := ds.Delete(dstore.RawKey(e.Key)); err != nil {
+		if err := ds.Delete(key.RawStrKey(e.Key)); err != nil {
 			t.Fatal(err)
 		}
 	}

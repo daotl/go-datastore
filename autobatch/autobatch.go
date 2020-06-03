@@ -4,8 +4,9 @@
 package autobatch
 
 import (
-	ds "github.com/ipfs/go-datastore"
-	dsq "github.com/ipfs/go-datastore/query"
+	ds "github.com/bdware/go-datastore"
+	key "github.com/bdware/go-datastore/key"
+	dsq "github.com/bdware/go-datastore/query"
 )
 
 // Datastore implements a go-datastore.
@@ -13,7 +14,7 @@ type Datastore struct {
 	child ds.Batching
 
 	// TODO: discuss making ds.Batch implement the full ds.Datastore interface
-	buffer           map[ds.Key]op
+	buffer           map[key.Key]op
 	maxBufferEntries int
 }
 
@@ -28,13 +29,13 @@ type op struct {
 func NewAutoBatching(d ds.Batching, size int) *Datastore {
 	return &Datastore{
 		child:            d,
-		buffer:           make(map[ds.Key]op, size),
+		buffer:           make(map[key.Key]op, size),
 		maxBufferEntries: size,
 	}
 }
 
 // Delete deletes a key/value
-func (d *Datastore) Delete(k ds.Key) error {
+func (d *Datastore) Delete(k key.Key) error {
 	d.buffer[k] = op{delete: true}
 	if len(d.buffer) > d.maxBufferEntries {
 		return d.Flush()
@@ -43,7 +44,7 @@ func (d *Datastore) Delete(k ds.Key) error {
 }
 
 // Get retrieves a value given a key.
-func (d *Datastore) Get(k ds.Key) ([]byte, error) {
+func (d *Datastore) Get(k key.Key) ([]byte, error) {
 	o, ok := d.buffer[k]
 	if ok {
 		if o.delete {
@@ -56,7 +57,7 @@ func (d *Datastore) Get(k ds.Key) ([]byte, error) {
 }
 
 // Put stores a key/value.
-func (d *Datastore) Put(k ds.Key, val []byte) error {
+func (d *Datastore) Put(k key.Key, val []byte) error {
 	d.buffer[k] = op{value: val}
 	if len(d.buffer) > d.maxBufferEntries {
 		return d.Flush()
@@ -66,7 +67,7 @@ func (d *Datastore) Put(k ds.Key, val []byte) error {
 
 // Sync flushes all operations on keys at or under the prefix
 // from the current batch to the underlying datastore
-func (d *Datastore) Sync(prefix ds.Key) error {
+func (d *Datastore) Sync(prefix key.Key) error {
 	b, err := d.child.Batch()
 	if err != nil {
 		return err
@@ -112,13 +113,13 @@ func (d *Datastore) Flush() error {
 		}
 	}
 	// clear out buffer
-	d.buffer = make(map[ds.Key]op, d.maxBufferEntries)
+	d.buffer = make(map[key.Key]op, d.maxBufferEntries)
 
 	return b.Commit()
 }
 
 // Has checks if a key is stored.
-func (d *Datastore) Has(k ds.Key) (bool, error) {
+func (d *Datastore) Has(k key.Key) (bool, error) {
 	o, ok := d.buffer[k]
 	if ok {
 		return !o.delete, nil
@@ -128,7 +129,7 @@ func (d *Datastore) Has(k ds.Key) (bool, error) {
 }
 
 // GetSize implements Datastore.GetSize
-func (d *Datastore) GetSize(k ds.Key) (int, error) {
+func (d *Datastore) GetSize(k key.Key) (int, error) {
 	o, ok := d.buffer[k]
 	if ok {
 		if o.delete {

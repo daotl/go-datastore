@@ -7,11 +7,11 @@ import (
 	"io/ioutil"
 	"os"
 
-	ds "github.com/ipfs/go-datastore"
-	fuzzer "github.com/ipfs/go-datastore/fuzz"
-	dsq "github.com/ipfs/go-datastore/query"
-
 	"github.com/spf13/pflag"
+
+	fuzzer "github.com/bdware/go-datastore/fuzz"
+	key "github.com/bdware/go-datastore/key"
+	dsq "github.com/bdware/go-datastore/query"
 )
 
 var input *string = pflag.StringP("input", "i", "", "file to read input from (stdin used if not specified)")
@@ -76,7 +76,7 @@ func main() {
 			if e.Entry.Key == "/" {
 				continue
 			}
-			if h, _ := previousDB.DB().Has(ds.NewKey(e.Entry.Key)); !h {
+			if h, _ := previousDB.DB().Has(key.NewStrKey(e.Entry.Key)); !h {
 				if verbose {
 					fmt.Printf("failed - script run db has %s not in existing.\n", e.Entry.Key)
 				}
@@ -89,7 +89,7 @@ func main() {
 			if e.Entry.Key == "/" {
 				continue
 			}
-			if h, _ := replayDB.DB().Has(ds.NewKey(e.Entry.Key)); !h {
+			if h, _ := replayDB.DB().Has(key.NewStrKey(e.Entry.Key)); !h {
 				if verbose {
 					fmt.Printf("failed - existing db has %s not in replay.\n", e.Entry.Key)
 				}

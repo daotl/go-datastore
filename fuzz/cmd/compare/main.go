@@ -5,11 +5,11 @@ import (
 	"io/ioutil"
 	"os"
 
-	ds "github.com/ipfs/go-datastore"
-	fuzzer "github.com/ipfs/go-datastore/fuzz"
-	dsq "github.com/ipfs/go-datastore/query"
-
 	"github.com/spf13/pflag"
+
+	fuzzer "github.com/bdware/go-datastore/fuzz"
+	key "github.com/bdware/go-datastore/key"
+	dsq "github.com/bdware/go-datastore/query"
 )
 
 var input *string = pflag.StringP("input", "i", "", "file to read input from (stdin used if not specified)")
@@ -77,7 +77,7 @@ func main() {
 			continue
 		}
 
-		if exist, _ := db2.Has(ds.NewKey(r.Entry.Key)); !exist {
+		if exist, _ := db2.Has(key.NewStrKey(r.Entry.Key)); !exist {
 			fmt.Fprintf(os.Stderr, "db2 failed to get key %s held by db1\n", r.Entry.Key)
 		}
 	}
@@ -95,7 +95,7 @@ func main() {
 			continue
 		}
 
-		if exist, _ := db1.Has(ds.NewKey(r.Entry.Key)); !exist {
+		if exist, _ := db1.Has(key.NewStrKey(r.Entry.Key)); !exist {
 			fmt.Fprintf(os.Stderr, "db1 failed to get key %s held by db2\n", r.Entry.Key)
 		}
 	}

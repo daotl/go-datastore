@@ -1,4 +1,10 @@
-package datastore_test
+// Copyright for portions of this fork are held by [Juan Batiz-Benet, 2016] as
+// part of the original go-datastore project. All other copyright for
+// this fork are held by [The BDWare Authors, 2020]. All rights reserved.
+// Use of this source code is governed by MIT license that can be
+// found in the LICENSE file.
+
+package key_test
 
 import (
 	"bytes"
@@ -6,18 +12,19 @@ import (
 	"strings"
 	"testing"
 
-	. "github.com/ipfs/go-datastore"
 	. "gopkg.in/check.v1"
+
+	. "github.com/bdware/go-datastore/key"
 )
 
 // Hook up gocheck into the "go test" runner.
 func Test(t *testing.T) { TestingT(t) }
 
-type KeySuite struct{}
+type StrKeySuite struct{}
 
-var _ = Suite(&KeySuite{})
+var _ = Suite(&StrKeySuite{})
 
-func (ks *KeySuite) SubtestKey(s string, c *C) {
+func (ks *StrKeySuite) SubtestKey(s string, c *C) {
 	fixed := path.Clean("/" + s)
 	namespaces := strings.Split(fixed, "/")[1:]
 	lastNamespace := namespaces[len(namespaces)-1]
@@ -33,37 +40,37 @@ func (ks *KeySuite) SubtestKey(s string, c *C) {
 	kpath := path.Clean(kparent + "/" + ktype)
 	kinstance := fixed + ":" + "inst"
 
-	c.Log("Testing: ", NewKey(s))
+	c.Log("Testing: ", NewStrKey(s))
 
-	c.Check(NewKey(s).String(), Equals, fixed)
-	c.Check(NewKey(s), Equals, NewKey(s))
-	c.Check(NewKey(s).String(), Equals, NewKey(s).String())
-	c.Check(NewKey(s).Name(), Equals, kname)
-	c.Check(NewKey(s).Type(), Equals, ktype)
-	c.Check(NewKey(s).Path().String(), Equals, kpath)
-	c.Check(NewKey(s).Instance("inst").String(), Equals, kinstance)
+	c.Check(NewStrKey(s).String(), Equals, fixed)
+	c.Check(NewStrKey(s), Equals, NewStrKey(s))
+	c.Check(NewStrKey(s).String(), Equals, NewStrKey(s).String())
+	c.Check(NewStrKey(s).Name(), Equals, kname)
+	c.Check(NewStrKey(s).Type(), Equals, ktype)
+	c.Check(NewStrKey(s).Path().String(), Equals, kpath)
+	c.Check(NewStrKey(s).Instance("inst").String(), Equals, kinstance)
 
-	c.Check(NewKey(s).Child(NewKey("cchildd")).String(), Equals, kchild)
-	c.Check(NewKey(s).Child(NewKey("cchildd")).Parent().String(), Equals, fixed)
-	c.Check(NewKey(s).ChildString("cchildd").String(), Equals, kchild)
-	c.Check(NewKey(s).ChildString("cchildd").Parent().String(), Equals, fixed)
-	c.Check(NewKey(s).Parent().String(), Equals, kparent)
-	c.Check(len(NewKey(s).List()), Equals, len(namespaces))
-	c.Check(len(NewKey(s).Namespaces()), Equals, len(namespaces))
-	for i, e := range NewKey(s).List() {
+	c.Check(NewStrKey(s).Child(NewStrKey("cchildd")).String(), Equals, kchild)
+	c.Check(NewStrKey(s).Child(NewStrKey("cchildd")).Parent().String(), Equals, fixed)
+	c.Check(NewStrKey(s).ChildString("cchildd").String(), Equals, kchild)
+	c.Check(NewStrKey(s).ChildString("cchildd").Parent().String(), Equals, fixed)
+	c.Check(NewStrKey(s).Parent().String(), Equals, kparent)
+	c.Check(len(NewStrKey(s).List()), Equals, len(namespaces))
+	c.Check(len(NewStrKey(s).Namespaces()), Equals, len(namespaces))
+	for i, e := range NewStrKey(s).List() {
 		c.Check(namespaces[i], Equals, e)
 	}
 
-	c.Check(NewKey(s), Equals, NewKey(s))
-	c.Check(NewKey(s).Equal(NewKey(s)), Equals, true)
-	c.Check(NewKey(s).Equal(NewKey("/fdsafdsa/"+s)), Equals, false)
+	c.Check(NewStrKey(s), Equals, NewStrKey(s))
+	c.Check(NewStrKey(s).Equal(NewStrKey(s)), Equals, true)
+	c.Check(NewStrKey(s).Equal(NewStrKey("/fdsafdsa/"+s)), Equals, false)
 
 	// less
-	c.Check(NewKey(s).Less(NewKey(s).Parent()), Equals, false)
-	c.Check(NewKey(s).Less(NewKey(s).ChildString("foo")), Equals, true)
+	c.Check(NewStrKey(s).Less(NewStrKey(s).Parent()), Equals, false)
+	c.Check(NewStrKey(s).Less(NewStrKey(s).ChildString("foo")), Equals, true)
 }
 
-func (ks *KeySuite) TestKeyBasic(c *C) {
+func (ks *StrKeySuite) TestKeyBasic(c *C) {
 	ks.SubtestKey("", c)
 	ks.SubtestKey("abcde", c)
 	ks.SubtestKey("disahfidsalfhduisaufidsail", c)
@@ -81,11 +88,11 @@ func CheckTrue(c *C, cond bool) {
 	c.Check(cond, Equals, true)
 }
 
-func (ks *KeySuite) TestKeyAncestry(c *C) {
-	k1 := NewKey("/A/B/C")
-	k2 := NewKey("/A/B/C/D")
-	k3 := NewKey("/AB")
-	k4 := NewKey("/A")
+func (ks *StrKeySuite) TestKeyAncestry(c *C) {
+	k1 := NewStrKey("/A/B/C")
+	k2 := NewStrKey("/A/B/C/D")
+	k3 := NewStrKey("/AB")
+	k4 := NewStrKey("/A")
 
 	c.Check(k1.String(), Equals, "/A/B/C")
 	c.Check(k2.String(), Equals, "/A/B/C/D")
@@ -103,15 +110,15 @@ func (ks *KeySuite) TestKeyAncestry(c *C) {
 	CheckTrue(c, !k1.IsAncestorOf(k4))
 	CheckTrue(c, !k2.IsAncestorOf(k2))
 	CheckTrue(c, !k1.IsAncestorOf(k1))
-	c.Check(k1.Child(NewKey("D")).String(), Equals, k2.String())
+	c.Check(k1.Child(NewStrKey("D")).String(), Equals, k2.String())
 	c.Check(k1.ChildString("D").String(), Equals, k2.String())
 	c.Check(k1.String(), Equals, k2.Parent().String())
 	c.Check(k1.Path().String(), Equals, k2.Parent().Path().String())
 }
 
-func (ks *KeySuite) TestType(c *C) {
-	k1 := NewKey("/A/B/C:c")
-	k2 := NewKey("/A/B/C:c/D:d")
+func (ks *StrKeySuite) TestType(c *C) {
+	k1 := NewStrKey("/A/B/C:c")
+	k2 := NewStrKey("/A/B/C:c/D:d")
 
 	CheckTrue(c, k1.IsAncestorOf(k2))
 	CheckTrue(c, k2.IsDescendantOf(k1))
@@ -120,10 +127,10 @@ func (ks *KeySuite) TestType(c *C) {
 	c.Check(k1.Type(), Equals, k2.Parent().Type())
 }
 
-func (ks *KeySuite) TestRandom(c *C) {
+func (ks *StrKeySuite) TestRandom(c *C) {
 	keys := map[Key]bool{}
 	for i := 0; i < 1000; i++ {
-		r := RandomKey()
+		r := RandomStrKey()
 		_, found := keys[r]
 		CheckTrue(c, !found)
 		keys[r] = true
@@ -131,11 +138,11 @@ func (ks *KeySuite) TestRandom(c *C) {
 	CheckTrue(c, len(keys) == 1000)
 }
 
-func (ks *KeySuite) TestLess(c *C) {
+func (ks *StrKeySuite) TestLess(c *C) {
 
 	checkLess := func(a, b string) {
-		ak := NewKey(a)
-		bk := NewKey(b)
+		ak := NewStrKey(a)
+		bk := NewStrKey(b)
 		c.Check(ak.Less(bk), Equals, true)
 		c.Check(bk.Less(ak), Equals, false)
 	}
@@ -149,14 +156,14 @@ func (ks *KeySuite) TestLess(c *C) {
 	checkLess("/", "/a")
 }
 
-func TestKeyMarshalJSON(t *testing.T) {
+func TestStrKeyMarshalJSON(t *testing.T) {
 	cases := []struct {
 		key  Key
 		data []byte
 		err  string
 	}{
-		{NewKey("/a/b/c"), []byte("\"/a/b/c\""), ""},
-		{NewKey("/shouldescapekey\"/with/quote"), []byte("\"/shouldescapekey\\\"/with/quote\""), ""},
+		{NewStrKey("/a/b/c"), []byte("\"/a/b/c\""), ""},
+		{NewStrKey("/shouldescapekey\"/with/quote"), []byte("\"/shouldescapekey\\\"/with/quote\""), ""},
 	}
 
 	for i, c := range cases {
@@ -169,7 +176,7 @@ func TestKeyMarshalJSON(t *testing.T) {
 		}
 
 		if c.err == "" {
-			key := Key{}
+			key := NewStrKey("").(StrKey)
 			if err := key.UnmarshalJSON(out); err != nil {
 				t.Errorf("case %d error parsing key from json output: %s", i, err.Error())
 			}
@@ -180,20 +187,20 @@ func TestKeyMarshalJSON(t *testing.T) {
 	}
 }
 
-func TestKeyUnmarshalJSON(t *testing.T) {
+func TestStrKeyUnmarshalJSON(t *testing.T) {
 	cases := []struct {
 		data []byte
 		key  Key
 		err  string
 	}{
-		{[]byte("\"/a/b/c\""), NewKey("/a/b/c"), ""},
-		{[]byte{}, Key{}, "unexpected end of JSON input"},
-		{[]byte{'"'}, Key{}, "unexpected end of JSON input"},
-		{[]byte(`""`), NewKey(""), ""},
+		{[]byte("\"/a/b/c\""), NewStrKey("/a/b/c"), ""},
+		{[]byte{}, NewStrKey(""), "unexpected end of JSON input"},
+		{[]byte{'"'}, NewStrKey(""), "unexpected end of JSON input"},
+		{[]byte(`""`), NewStrKey(""), ""},
 	}
 
 	for i, c := range cases {
-		key := Key{}
+		key := NewStrKey("").(StrKey)
 		err := key.UnmarshalJSON(c.data)
 		if !(err == nil && c.err == "" || err != nil && err.Error() == c.err) {
 			t.Errorf("case %d marshal error mismatch: expected: %s, got: %s", i, c.err, err)

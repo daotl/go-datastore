@@ -1,3 +1,9 @@
+// Copyright for portions of this fork are held by [Juan Batiz-Benet, 2016] as
+// part of the original go-datastore project. All other copyright for
+// this fork are held by [The BDWare Authors, 2020]. All rights reserved.
+// Use of this source code is governed by MIT license that can be
+// found in the LICENSE file.
+
 package autobatch
 
 import (
@@ -5,8 +11,9 @@ import (
 	"fmt"
 	"testing"
 
-	ds "github.com/ipfs/go-datastore"
-	dstest "github.com/ipfs/go-datastore/test"
+	ds "github.com/bdware/go-datastore"
+	key "github.com/bdware/go-datastore/key"
+	dstest "github.com/bdware/go-datastore/test"
 )
 
 func TestAutobatch(t *testing.T) {
@@ -17,9 +24,9 @@ func TestFlushing(t *testing.T) {
 	child := ds.NewMapDatastore()
 	d := NewAutoBatching(child, 16)
 
-	var keys []ds.Key
+	var keys []key.Key
 	for i := 0; i < 16; i++ {
-		keys = append(keys, ds.NewKey(fmt.Sprintf("test%d", i)))
+		keys = append(keys, key.NewStrKey(fmt.Sprintf("test%d", i)))
 	}
 	v := []byte("hello world")
 
@@ -65,7 +72,7 @@ func TestFlushing(t *testing.T) {
 	}
 
 	// Final put flushes.
-	err = d.Put(ds.NewKey("test16"), v)
+	err = d.Put(key.NewStrKey("test16"), v)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -108,18 +115,18 @@ func TestSync(t *testing.T) {
 	child := ds.NewMapDatastore()
 	d := NewAutoBatching(child, 100)
 
-	put := func(key ds.Key) {
+	put := func(key key.Key) {
 		if err := d.Put(key, []byte(key.String())); err != nil {
 			t.Fatal(err)
 		}
 	}
-	del := func(key ds.Key) {
+	del := func(key key.Key) {
 		if err := d.Delete(key); err != nil {
 			t.Fatal(err)
 		}
 	}
 
-	get := func(d ds.Datastore, key ds.Key) {
+	get := func(d ds.Datastore, key key.Key) {
 		val, err := d.Get(key)
 		if err != nil {
 			t.Fatal(err)
@@ -129,7 +136,7 @@ func TestSync(t *testing.T) {
 			t.Fatal("wrong value")
 		}
 	}
-	invalidGet := func(d ds.Datastore, key ds.Key) {
+	invalidGet := func(d ds.Datastore, key key.Key) {
 		if _, err := d.Get(key); err != ds.ErrNotFound {
 			t.Fatal("should not have found value")
 		}
@@ -144,20 +151,20 @@ func TestSync(t *testing.T) {
 
 // This function can be used to test Sync Puts and Deletes
 // For clarity comments are written as if op = Put and undoOp = Delete
-func internalSyncTest(t *testing.T, d, child ds.Datastore, op, undoOp func(ds.Key),
-	checkOp, checkUndoOp func(ds.Datastore, ds.Key)) {
-	var keys []ds.Key
-	keymap := make(map[ds.Key]int)
+func internalSyncTest(t *testing.T, d, child ds.Datastore, op, undoOp func(key.Key),
+	checkOp, checkUndoOp func(ds.Datastore, key.Key)) {
+	var keys []key.Key
+	keymap := make(map[key.Key]int)
 	for i := 0; i < 4; i++ {
-		k := ds.NewKey(fmt.Sprintf("%d", i))
+		k := key.NewStrKey(fmt.Sprintf("%d", i))
 		keymap[k] = len(keys)
 		keys = append(keys, k)
 		for j := 0; j < 2; j++ {
-			k := ds.NewKey(fmt.Sprintf("%d/%d", i, j))
+			k := key.NewStrKey(fmt.Sprintf("%d/%d", i, j))
 			keymap[k] = len(keys)
 			keys = append(keys, k)
 			for k := 0; k < 2; k++ {
-				k := ds.NewKey(fmt.Sprintf("%d/%d/%d", i, j, k))
+				k := key.NewStrKey(fmt.Sprintf("%d/%d/%d", i, j, k))
 				keymap[k] = len(keys)
 				keys = append(keys, k)
 			}
@@ -174,18 +181,18 @@ func internalSyncTest(t *testing.T, d, child ds.Datastore, op, undoOp func(ds.Ke
 	}
 
 	// Put not flushed
-	checkUndoOp(child, ds.NewKey("0"))
+	checkUndoOp(child, key.NewStrKey("0"))
 
 	// Delete works.
-	deletedKey := ds.NewKey("2/1/1")
+	deletedKey := key.NewStrKey("2/1/1")
 	undoOp(deletedKey)
 	checkUndoOp(d, deletedKey)
 
 	// Put still not flushed
-	checkUndoOp(child, ds.NewKey("0"))
+	checkUndoOp(child, key.NewStrKey("0"))
 
 	// Sync the tree "0/*/*"
-	if err := d.Sync(ds.NewKey("0")); err != nil {
+	if err := d.Sync(key.NewStrKey("0")); err != nil {
 		t.Fatal(err)
 	}
 
@@ -196,7 +203,7 @@ func internalSyncTest(t *testing.T, d, child ds.Datastore, op, undoOp func(ds.Ke
 	checkKeyRange(t, keymap, keys, child, [][]string{{"1", "3/1/1"}}, checkUndoOp)
 
 	// Sync the tree "1/1/*"
-	if err := d.Sync(ds.NewKey("1/1")); err != nil {
+	if err := d.Sync(key.NewStrKey("1/1")); err != nil {
 		t.Fatal(err)
 	}
 
@@ -207,7 +214,7 @@ func internalSyncTest(t *testing.T, d, child ds.Datastore, op, undoOp func(ds.Ke
 	checkKeyRange(t, keymap, keys, child, [][]string{{"1", "1/0/1"}, {"2", "3/1/1"}}, checkUndoOp)
 
 	// Sync the tree "3/1/1"
-	if err := d.Sync(ds.NewKey("3/1/1")); err != nil {
+	if err := d.Sync(key.NewStrKey("3/1/1")); err != nil {
 		t.Fatal(err)
 	}
 
@@ -217,7 +224,7 @@ func internalSyncTest(t *testing.T, d, child ds.Datastore, op, undoOp func(ds.Ke
 	// Verify no other keys were synchronized
 	checkKeyRange(t, keymap, keys, child, [][]string{{"1", "1/0/1"}, {"2", "3/1/0"}}, checkUndoOp)
 
-	if err := d.Sync(ds.Key{}); err != nil {
+	if err := d.Sync(key.NewStrKey("")); err != nil {
 		t.Fatal(err)
 	}
 
@@ -239,11 +246,11 @@ func internalSyncTest(t *testing.T, d, child ds.Datastore, op, undoOp func(ds.Ke
 	checkOp(d, deletedKey)
 }
 
-func checkKeyRange(t *testing.T, keymap map[ds.Key]int, keys []ds.Key,
-	d ds.Datastore, validKeyRanges [][]string, checkFn func(ds.Datastore, ds.Key)) {
+func checkKeyRange(t *testing.T, keymap map[key.Key]int, keys []key.Key,
+	d ds.Datastore, validKeyRanges [][]string, checkFn func(ds.Datastore, key.Key)) {
 	t.Helper()
 	for _, validKeyBoundaries := range validKeyRanges {
-		start, end := keymap[ds.NewKey(validKeyBoundaries[0])], keymap[ds.NewKey(validKeyBoundaries[1])]
+		start, end := keymap[key.NewStrKey(validKeyBoundaries[0])], keymap[key.NewStrKey(validKeyBoundaries[1])]
 		for _, k := range keys[start:end] {
 			checkFn(d, k)
 		}

@@ -1,0 +1,330 @@
+// Copyright for portions of this fork are held by [Juan Batiz-Benet, 2016] as
+// part of the original go-datastore project. All other copyright for
+// this fork are held by [The BDWare Authors, 2020]. All rights reserved.
+// Use of this source code is governed by MIT license that can be
+// found in the LICENSE file.
+
+package key
+
+import (
+	"encoding/json"
+	"path"
+	"strings"
+
+	dsq "github.com/bdware/go-datastore/query"
+	"github.com/google/uuid"
+)
+
+/*
+A StrKey represents the unique identifier of an object.
+StrKeys are meant to be unique across a system.
+
+Our Key scheme is inspired by file systems and Google App Engine key model.
+StrKeys are hierarchical, incorporating more and more specific namespaces.
+Thus keys can be deemed 'children' or 'ancestors' of other keys::
+
+    StrKey("/Comedy")
+    StrKey("/Comedy/MontyPython")
+
+Also, every namespace can be parametrized to embed relevant object
+information. For example, the StrKey `name` (most specific namespace) could
+include the object type::
+
+    StrKey("/Comedy/MontyPython/Actor:JohnCleese")
+    StrKey("/Comedy/MontyPython/Sketch:CheeseShop")
+    StrKey("/Comedy/MontyPython/Sketch:CheeseShop/Character:Mousebender")
+
+*/
+type StrKey struct {
+	string
+}
+
+// NewStrKey constructs a key from string. it will clean the value.
+func NewStrKey(s string) Key {
+	k := StrKey{s}
+	k.Clean()
+	return k
+}
+
+// RawStrKey creates a new Key without safety checking the input. Use with care.
+func RawStrKey(s string) Key {
+	// accept an empty string and fix it to avoid special cases
+	// elsewhere
+	if len(s) == 0 {
+		return StrKey{"/"}
+	}
+
+	// perform a quick sanity check that the key is in the correct
+	// format, if it is not then it is a programmer error and it is
+	// okay to panic
+	if len(s) == 0 || s[0] != '/' || (len(s) > 1 && s[len(s)-1] == '/') {
+		panic("invalid datastore key: " + s)
+	}
+
+	return StrKey{s}
+}
+
+// Deprecated: NewKey just proxy calls to NewStrKey for backward compatibility.
+func NewKey(s string) Key {
+	return NewStrKey(s)
+}
+
+// Deprecated: RawKey just proxy calls to RawStrKey for backward compatibility.
+func RawKey(s string) Key {
+	return RawStrKey(s)
+}
+
+// KeyWithNamespaces constructs a key out of a namespace slice.
+func KeyWithNamespaces(ns []string) Key {
+	return NewStrKey(strings.Join(ns, "/"))
+}
+
+// Clean up a StrKey, using path.Clean.
+func (k *StrKey) Clean() {
+	switch {
+	case len(k.string) == 0:
+		k.string = "/"
+	case k.string[0] == '/':
+		k.string = path.Clean(k.string)
+	default:
+		k.string = path.Clean("/" + k.string)
+	}
+}
+
+// Strings is the string value of Key
+func (k StrKey) String() string {
+	return k.string
+}
+
+// Bytes returns the string value of Key as a []byte
+func (k StrKey) Bytes() []byte {
+	return []byte(k.string)
+}
+
+// Equal checks equality of two keys
+func (k StrKey) Equal(k2 Key) bool {
+	sk2, ok := k2.(StrKey)
+	return ok && k.string == sk2.string
+}
+
+// Less checks whether this key is sorted lower than another.
+// Panic if `k2` is not a StrKey.
+func (k StrKey) Less(k2 Key) bool {
+	sk2 := k2.(StrKey)
+	list1 := k.List()
+	list2 := sk2.List()
+	for i, c1 := range list1 {
+		if len(list2) < (i + 1) {
+			return false
+		}
+
+		c2 := list2[i]
+		if c1 < c2 {
+			return true
+		} else if c1 > c2 {
+			return false
+		}
+		// c1 == c2, continue
+	}
+
+	// list1 is shorter or exactly the same.
+	return len(list1) < len(list2)
+}
+
+// List returns the `list` representation of this Key.
+//   NewStrKey("/Comedy/MontyPython/Actor:JohnCleese").List()
+//   ["Comedy", "MontyPythong", "Actor:JohnCleese"]
+func (k StrKey) List() []string {
+	return strings.Split(k.string, "/")[1:]
+}
+
+// Reverse returns the reverse of this Key.
+//   NewStrKey("/Comedy/MontyPython/Actor:JohnCleese").Reverse()
+//   NewStrKey("/Actor:JohnCleese/MontyPython/Comedy")
+func (k StrKey) Reverse() Key {
+	l := k.List()
+	r := make([]string, len(l))
+	for i, e := range l {
+		r[len(l)-i-1] = e
+	}
+	return KeyWithNamespaces(r)
+}
+
+// Namespaces returns the `namespaces` making up this Key.
+//   NewStrKey("/Comedy/MontyPython/Actor:JohnCleese").Namespaces()
+//   ["Comedy", "MontyPython", "Actor:JohnCleese"]
+func (k StrKey) Namespaces() []string {
+	return k.List()
+}
+
+// BaseNamespace returns the "base" namespace of this key (path.Base(filename))
+//   NewStrKey("/Comedy/MontyPython/Actor:JohnCleese").BaseNamespace()
+//   "Actor:JohnCleese"
+func (k StrKey) BaseNamespace() string {
+	n := k.Namespaces()
+	return n[len(n)-1]
+}
+
+// Type returns the "type" of this key (value of last namespace).
+//   NewStrKey("/Comedy/MontyPython/Actor:JohnCleese").Type()
+//   "Actor"
+func (k StrKey) Type() string {
+	return NamespaceType(k.BaseNamespace())
+}
+
+// Name returns the "name" of this key (field of last namespace).
+//   NewStrKey("/Comedy/MontyPython/Actor:JohnCleese").Name()
+//   "JohnCleese"
+func (k StrKey) Name() string {
+	return NamespaceValue(k.BaseNamespace())
+}
+
+// Instance returns an "instance" of this type key (appends value to namespace).
+//   NewStrKey("/Comedy/MontyPython/Actor").Instance("JohnClesse")
+//   NewStrKey("/Comedy/MontyPython/Actor:JohnCleese")
+func (k StrKey) Instance(s string) Key {
+	return NewStrKey(k.string + ":" + s)
+}
+
+// Path returns the "path" of this key (parent + type).
+//   NewStrKey("/Comedy/MontyPython/Actor:JohnCleese").Path()
+//   NewStrKey("/Comedy/MontyPython/Actor")
+func (k StrKey) Path() Key {
+	s := k.Parent().(StrKey).string + "/" + NamespaceType(k.BaseNamespace())
+	return NewStrKey(s)
+}
+
+// Parent returns the `parent` Key of this Key.
+//   NewStrKey("/Comedy/MontyPython/Actor:JohnCleese").Parent()
+//   NewStrKey("/Comedy/MontyPython")
+func (k StrKey) Parent() Key {
+	n := k.List()
+	if len(n) == 1 {
+		return RawStrKey("/")
+	}
+	return NewStrKey(strings.Join(n[:len(n)-1], "/"))
+}
+
+// Child returns the `child` Key of this Key.
+//   NewStrKey("/Comedy/MontyPython").Child(NewStrKey("Actor:JohnCleese"))
+//   NewStrKey("/Comedy/MontyPython/Actor:JohnCleese")
+// Panic if `k2` is not a StrKey.
+func (k StrKey) Child(k2 Key) Key {
+	sk2 := k2.(StrKey)
+	switch {
+	case k.string == "/":
+		return k2
+	case sk2.string == "/":
+		return k
+	default:
+		return RawStrKey(k.string + sk2.string)
+	}
+}
+
+// ChildString returns the `child` Key of this Key -- string helper.
+//   NewStrKey("/Comedy/MontyPython").ChildString("Actor:JohnCleese")
+//   NewStrKey("/Comedy/MontyPython/Actor:JohnCleese")
+func (k StrKey) ChildString(s string) Key {
+	return NewStrKey(k.string + "/" + s)
+}
+
+// IsAncestorOf returns whether this key is a prefix of `other`
+//   NewStrKey("/Comedy").IsAncestorOf("/Comedy/MontyPython")
+//   true
+// Panic if `other` is not a StrKey.
+func (k StrKey) IsAncestorOf(other Key) bool {
+	// equivalent to HasPrefix(other, k.string + "/")
+	sother := other.(StrKey)
+
+	if len(sother.string) <= len(k.string) {
+		// We're not long enough to be a child.
+		return false
+	}
+
+	if k.string == "/" {
+		// We're the root and the other key is longer.
+		return true
+	}
+
+	// "other" starts with /k.string/
+	return sother.string[len(k.string)] == '/' && sother.string[:len(k.string)] == k.string
+}
+
+// IsDescendantOf returns whether this key contains another as a prefix.
+//   NewStrKey("/Comedy/MontyPython").IsDescendantOf("/Comedy")
+//   true
+// Panic if `other` is not a StrKey.
+func (k StrKey) IsDescendantOf(other Key) bool {
+	sother := other.(StrKey)
+	return sother.IsAncestorOf(k)
+}
+
+// IsTopLevel returns whether this key has only one namespace.
+func (k StrKey) IsTopLevel() bool {
+	return len(k.List()) == 1
+}
+
+// MarshalJSON implements the json.Marshaler interface,
+// keys are represented as JSON strings
+func (k StrKey) MarshalJSON() ([]byte, error) {
+	return json.Marshal(k.String())
+}
+
+// UnmarshalJSON implements the json.Unmarshaler interface,
+// keys will parse any value specified as a key to a string
+func (k *StrKey) UnmarshalJSON(data []byte) error {
+	var key string
+	if err := json.Unmarshal(data, &key); err != nil {
+		return err
+	}
+	*k = NewStrKey(key).(StrKey)
+	return nil
+}
+
+// RandomStrKey returns a randomly (uuid) generated key.
+//   RandomStrKey()
+//   NewStrKey("/f98719ea086343f7b71f32ea9d9d521d")
+func RandomStrKey() Key {
+	return NewStrKey(strings.Replace(uuid.New().String(), "-", "", -1))
+}
+
+// Deprecated: RandomKey just proxy calls to RandomStrKey for backward compatibility.
+func RandomKey() Key {
+	return RandomStrKey()
+}
+
+/*
+A Key Namespace is like a path element.
+A namespace can optionally include a type (delimited by ':')
+
+    > NamespaceValue("Song:PhilosopherSong")
+    PhilosopherSong
+    > NamespaceType("Song:PhilosopherSong")
+    Song
+    > NamespaceType("Music:Song:PhilosopherSong")
+    Music:Song
+*/
+
+// NamespaceType is the first component of a namespace. `foo` in `foo:bar`
+func NamespaceType(namespace string) string {
+	parts := strings.Split(namespace, ":")
+	if len(parts) < 2 {
+		return ""
+	}
+	return strings.Join(parts[0:len(parts)-1], ":")
+}
+
+// NamespaceValue returns the last component of a namespace. `baz` in `f:b:baz`
+func NamespaceValue(namespace string) string {
+	parts := strings.Split(namespace, ":")
+	return parts[len(parts)-1]
+}
+
+// EntryKeys
+func EntryKeys(e []dsq.Entry) []Key {
+	ks := make([]Key, len(e))
+	for i, e := range e {
+		ks[i] = NewStrKey(e.Key)
+	}
+	return ks
+}

@@ -5,8 +5,9 @@ package delayed
 import (
 	"io"
 
-	ds "github.com/ipfs/go-datastore"
-	dsq "github.com/ipfs/go-datastore/query"
+	ds "github.com/bdware/go-datastore"
+	key "github.com/bdware/go-datastore/key"
+	dsq "github.com/bdware/go-datastore/query"
 	delay "github.com/ipfs/go-ipfs-delay"
 )
 
@@ -25,37 +26,37 @@ var _ ds.Batching = (*Delayed)(nil)
 var _ io.Closer = (*Delayed)(nil)
 
 // Put implements the ds.Datastore interface.
-func (dds *Delayed) Put(key ds.Key, value []byte) (err error) {
+func (dds *Delayed) Put(key key.Key, value []byte) (err error) {
 	dds.delay.Wait()
 	return dds.ds.Put(key, value)
 }
 
 // Sync implements Datastore.Sync
-func (dds *Delayed) Sync(prefix ds.Key) error {
+func (dds *Delayed) Sync(prefix key.Key) error {
 	dds.delay.Wait()
 	return dds.ds.Sync(prefix)
 }
 
 // Get implements the ds.Datastore interface.
-func (dds *Delayed) Get(key ds.Key) (value []byte, err error) {
+func (dds *Delayed) Get(key key.Key) (value []byte, err error) {
 	dds.delay.Wait()
 	return dds.ds.Get(key)
 }
 
 // Has implements the ds.Datastore interface.
-func (dds *Delayed) Has(key ds.Key) (exists bool, err error) {
+func (dds *Delayed) Has(key key.Key) (exists bool, err error) {
 	dds.delay.Wait()
 	return dds.ds.Has(key)
 }
 
 // GetSize implements the ds.Datastore interface.
-func (dds *Delayed) GetSize(key ds.Key) (size int, err error) {
+func (dds *Delayed) GetSize(key key.Key) (size int, err error) {
 	dds.delay.Wait()
 	return dds.ds.GetSize(key)
 }
 
 // Delete implements the ds.Datastore interface.
-func (dds *Delayed) Delete(key ds.Key) (err error) {
+func (dds *Delayed) Delete(key key.Key) (err error) {
 	dds.delay.Wait()
 	return dds.ds.Delete(key)
 }

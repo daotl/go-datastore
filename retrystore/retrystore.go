@@ -5,8 +5,10 @@ package retrystore
 import (
 	"time"
 
-	ds "github.com/ipfs/go-datastore"
 	xerrors "golang.org/x/xerrors"
+
+	ds "github.com/bdware/go-datastore"
+	key "github.com/bdware/go-datastore/key"
 )
 
 // Datastore wraps a Batching datastore with a
@@ -55,7 +57,7 @@ func (d *Datastore) DiskUsage() (uint64, error) {
 }
 
 // Get retrieves a value given a key.
-func (d *Datastore) Get(k ds.Key) ([]byte, error) {
+func (d *Datastore) Get(k key.Key) ([]byte, error) {
 	var val []byte
 	err := d.runOp(func() error {
 		var err error
@@ -67,21 +69,21 @@ func (d *Datastore) Get(k ds.Key) ([]byte, error) {
 }
 
 // Put stores a key/value.
-func (d *Datastore) Put(k ds.Key, val []byte) error {
+func (d *Datastore) Put(k key.Key, val []byte) error {
 	return d.runOp(func() error {
 		return d.Batching.Put(k, val)
 	})
 }
 
 // Sync implements Datastore.Sync
-func (d *Datastore) Sync(prefix ds.Key) error {
+func (d *Datastore) Sync(prefix key.Key) error {
 	return d.runOp(func() error {
 		return d.Batching.Sync(prefix)
 	})
 }
 
 // Has checks if a key is stored.
-func (d *Datastore) Has(k ds.Key) (bool, error) {
+func (d *Datastore) Has(k key.Key) (bool, error) {
 	var has bool
 	err := d.runOp(func() error {
 		var err error
@@ -92,7 +94,7 @@ func (d *Datastore) Has(k ds.Key) (bool, error) {
 }
 
 // GetSize returns the size of the value in the datastore, if present.
-func (d *Datastore) GetSize(k ds.Key) (int, error) {
+func (d *Datastore) GetSize(k key.Key) (int, error) {
 	var size int
 	err := d.runOp(func() error {
 		var err error
