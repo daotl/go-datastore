@@ -7,8 +7,13 @@
 package key
 
 import (
+	"errors"
 	"fmt"
+
+	dsq "github.com/bdware/go-datastore/query"
 )
+
+var ErrUnimplemented = errors.New("function not implemented")
 
 /*
 A Key represents the unique identifier of an object.
@@ -80,6 +85,10 @@ type Key interface {
 	//   NewStrKey("/Comedy/MontyPython").ChildString("Actor:JohnCleese")
 	//   NewStrKey("/Comedy/MontyPython/Actor:JohnCleese")
 	ChildString(s string) Key
+	// ChildBytes returns the `child` Key of this Key -- bytes helper.
+	//   NewBytesKey({{BYTES1}}).Child({{BYTES2}}))
+	//   NewBytesKey({{BYTES1 || BYTES2}})
+	ChildBytes(b []byte) Key
 	// IsAncestorOf returns whether this key is a prefix of `other`
 	IsAncestorOf(other Key) bool
 	// IsDescendantOf returns whether this key contains another as a prefix.
@@ -98,3 +107,12 @@ type KeySlice []Key
 func (p KeySlice) Len() int           { return len(p) }
 func (p KeySlice) Less(i, j int) bool { return p[i].Less(p[j]) }
 func (p KeySlice) Swap(i, j int)      { p[i], p[j] = p[j], p[i] }
+
+// EntryKeys
+func EntryKeys(e []dsq.Entry) []Key {
+	ks := make([]Key, len(e))
+	for i, e := range e {
+		ks[i] = e.Key
+	}
+	return ks
+}

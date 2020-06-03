@@ -11,7 +11,6 @@ import (
 	"path"
 	"strings"
 
-	dsq "github.com/bdware/go-datastore/query"
 	"github.com/google/uuid"
 )
 
@@ -228,6 +227,12 @@ func (k StrKey) ChildString(s string) Key {
 	return NewStrKey(k.string + "/" + s)
 }
 
+// ChildBytes returns the `child` Key of this Key -- bytes helper.
+// Not applicable for StrKey.
+func (k StrKey) ChildBytes(b []byte) Key {
+	panic(ErrUnimplemented)
+}
+
 // IsAncestorOf returns whether this key is a prefix of `other`
 //   NewStrKey("/Comedy").IsAncestorOf("/Comedy/MontyPython")
 //   true
@@ -318,13 +323,4 @@ func NamespaceType(namespace string) string {
 func NamespaceValue(namespace string) string {
 	parts := strings.Split(namespace, ":")
 	return parts[len(parts)-1]
-}
-
-// EntryKeys
-func EntryKeys(e []dsq.Entry) []Key {
-	ks := make([]Key, len(e))
-	for i, e := range e {
-		ks[i] = NewStrKey(e.Key)
-	}
-	return ks
 }
