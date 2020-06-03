@@ -106,7 +106,7 @@ func (qr *queryResults) advance() bool {
 		return false
 	}
 
-	r.Key = qr.mount.Child(key.RawStrKey(r.Key)).String()
+	r.Key = qr.mount.Child(r.Key)
 	qr.next = r
 	return true
 }

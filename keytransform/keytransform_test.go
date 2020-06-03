@@ -39,7 +39,7 @@ func (ks *DSSuite) TestBasic(c *C) {
 	mpds := dstest.NewTestDatastore(true)
 	ktds := kt.Wrap(mpds, pair)
 
-	keys := strsToKeys([]string{
+	keys := key.StrsToKeys([]string{
 		"foo",
 		"foo/bar",
 		"foo/bar/baz",
@@ -70,7 +70,7 @@ func (ks *DSSuite) TestBasic(c *C) {
 		e, err := r.Rest()
 		c.Check(err, Equals, nil)
 
-		return key.EntryKeys(e)
+		return dsq.EntryKeys(e)
 	}
 
 	listA := run(mpds, dsq.Query{})
@@ -101,14 +101,6 @@ func (ks *DSSuite) TestBasic(c *C) {
 	if err := ktds.Scrub(); err != dstest.TestError {
 		c.Errorf("Unexpected Scrub() error: %s", err)
 	}
-}
-
-func strsToKeys(strs []string) []key.Key {
-	keys := make([]key.Key, len(strs))
-	for i, s := range strs {
-		keys[i] = key.NewStrKey(s)
-	}
-	return keys
 }
 
 func TestSuiteDefaultPair(t *testing.T) {

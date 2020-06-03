@@ -73,11 +73,11 @@ func main() {
 		if r.Error != nil {
 			break
 		}
-		if r.Entry.Key == "/" {
+		if r.Entry.Key.Equal(key.NewStrKey("/")) {
 			continue
 		}
 
-		if exist, _ := db2.Has(key.NewStrKey(r.Entry.Key)); !exist {
+		if exist, _ := db2.Has(r.Entry.Key); !exist {
 			fmt.Fprintf(os.Stderr, "db2 failed to get key %s held by db1\n", r.Entry.Key)
 		}
 	}
@@ -91,11 +91,11 @@ func main() {
 		if r.Error != nil {
 			break
 		}
-		if r.Entry.Key == "/" {
+		if r.Entry.Key.Equal(key.NewStrKey("/")) {
 			continue
 		}
 
-		if exist, _ := db1.Has(key.NewStrKey(r.Entry.Key)); !exist {
+		if exist, _ := db1.Has(r.Entry.Key); !exist {
 			fmt.Fprintf(os.Stderr, "db1 failed to get key %s held by db2\n", r.Entry.Key)
 		}
 	}

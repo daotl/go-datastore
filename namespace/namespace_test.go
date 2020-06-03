@@ -31,7 +31,7 @@ func (ks *DSSuite) testBasic(c *C, prefix string) {
 	mpds := ds.NewMapDatastore()
 	nsds := ns.Wrap(mpds, key.NewStrKey(prefix))
 
-	keys := strsToKeys([]string{
+	keys := key.StrsToKeys([]string{
 		"foo",
 		"foo/bar",
 		"foo/bar/baz",
@@ -62,7 +62,7 @@ func (ks *DSSuite) testBasic(c *C, prefix string) {
 		e, err := r.Rest()
 		c.Check(err, Equals, nil)
 
-		return key.EntryKeys(e)
+		return dsq.EntryKeys(e)
 	}
 
 	listA := run(mpds, dsq.Query{})
@@ -84,7 +84,7 @@ func (ks *DSSuite) TestQuery(c *C) {
 	mpds := dstest.NewTestDatastore(true)
 	nsds := ns.Wrap(mpds, key.NewStrKey("/foo"))
 
-	keys := strsToKeys([]string{
+	keys := key.StrsToKeys([]string{
 		"abc/foo",
 		"bar/foo",
 		"foo/bar",
@@ -102,14 +102,14 @@ func (ks *DSSuite) TestQuery(c *C) {
 	c.Check(err, Equals, nil)
 
 	expect := []dsq.Entry{
-		{Key: "/bar", Size: len([]byte("/foo/bar")), Value: []byte("/foo/bar")},
-		{Key: "/bar/baz", Size: len([]byte("/foo/bar/baz")), Value: []byte("/foo/bar/baz")},
-		{Key: "/baz/abc", Size: len([]byte("/foo/baz/abc")), Value: []byte("/foo/baz/abc")},
+		{Key: key.NewStrKey("/bar"), Size: len([]byte("/foo/bar")), Value: []byte("/foo/bar")},
+		{Key: key.NewStrKey("/bar/baz"), Size: len([]byte("/foo/bar/baz")), Value: []byte("/foo/bar/baz")},
+		{Key: key.NewStrKey("/baz/abc"), Size: len([]byte("/foo/baz/abc")), Value: []byte("/foo/baz/abc")},
 	}
 
 	results, err := qres.Rest()
 	c.Check(err, Equals, nil)
-	sort.Slice(results, func(i, j int) bool { return results[i].Key < results[j].Key })
+	sort.Slice(results, func(i, j int) bool { return results[i].Key.Less(results[j].Key) })
 
 	for i, ent := range results {
 		c.Check(ent.Key, Equals, expect[i].Key)
@@ -123,12 +123,12 @@ func (ks *DSSuite) TestQuery(c *C) {
 	c.Check(err, Equals, nil)
 
 	expect = []dsq.Entry{
-		{Key: "/bar/baz", Size: len([]byte("/foo/bar/baz")), Value: []byte("/foo/bar/baz")},
+		{Key: key.NewStrKey("/bar/baz"), Size: len([]byte("/foo/bar/baz")), Value: []byte("/foo/bar/baz")},
 	}
 
 	results, err = qres.Rest()
 	c.Check(err, Equals, nil)
-	sort.Slice(results, func(i, j int) bool { return results[i].Key < results[j].Key })
+	sort.Slice(results, func(i, j int) bool { return results[i].Key.Less(results[j].Key) })
 
 	for i, ent := range results {
 		c.Check(ent.Key, Equals, expect[i].Key)
@@ -146,14 +146,6 @@ func (ks *DSSuite) TestQuery(c *C) {
 	if err := nsds.Scrub(); err != dstest.TestError {
 		c.Errorf("Unexpected Scrub() error: %s", err)
 	}
-}
-
-func strsToKeys(strs []string) []key.Key {
-	keys := make([]key.Key, len(strs))
-	for i, s := range strs {
-		keys[i] = key.NewStrKey(s)
-	}
-	return keys
 }
 
 func TestSuite(t *testing.T) {

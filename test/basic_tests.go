@@ -223,7 +223,7 @@ func SubtestBasicSync(t *testing.T, ds dstore.Datastore) {
 type testFilter struct{}
 
 func (testFilter) Filter(e dsq.Entry) bool {
-	return len(e.Key)%2 == 0
+	return len(e.Key.Bytes())%2 == 0
 }
 
 func SubtestCombinations(t *testing.T, ds dstore.Datastore) {
@@ -242,11 +242,11 @@ func SubtestCombinations(t *testing.T, ds dstore.Datastore) {
 	filters := [][]dsq.Filter{
 		{dsq.FilterKeyCompare{
 			Op:  dsq.Equal,
-			Key: "/0key0",
+			Key: key.FilterStrKey("/0key0"),
 		}},
 		{dsq.FilterKeyCompare{
 			Op:  dsq.LessThan,
-			Key: "/2",
+			Key: key.FilterStrKey("/2"),
 		}},
 	}
 	prefixes := []string{
@@ -321,25 +321,25 @@ func SubtestFilter(t *testing.T, ds dstore.Datastore) {
 	}
 	test(dsq.FilterKeyCompare{
 		Op:  dsq.Equal,
-		Key: "/0key0",
+		Key: key.FilterStrKey("/0key0"),
 	})
 
 	test(dsq.FilterKeyCompare{
 		Op:  dsq.LessThan,
-		Key: "/2",
+		Key: key.FilterStrKey("/2"),
 	})
 
 	test(&dsq.FilterKeyCompare{
 		Op:  dsq.Equal,
-		Key: "/0key0",
+		Key: key.FilterStrKey("/0key0"),
 	})
 
 	test(dsq.FilterKeyPrefix{
-		Prefix: "/0key0",
+		Prefix: key.FilterStrKey("/0key0"),
 	})
 
 	test(&dsq.FilterKeyPrefix{
-		Prefix: "/0key0",
+		Prefix: key.FilterStrKey("/0key0"),
 	})
 
 	test(dsq.FilterValueCompare{
@@ -386,7 +386,7 @@ func subtestQuery(t *testing.T, ds dstore.Datastore, q dsq.Query, count int) {
 	var input []dsq.Entry
 	for i := 0; i < count; i++ {
 		s := fmt.Sprintf("%dkey%d", i, i)
-		key := key.NewStrKey(s).String()
+		key := key.NewStrKey(s)
 		value := randValue()
 		input = append(input, dsq.Entry{
 			Key:   key,
@@ -397,7 +397,7 @@ func subtestQuery(t *testing.T, ds dstore.Datastore, q dsq.Query, count int) {
 
 	for i := 0; i < count; i++ {
 		s := fmt.Sprintf("/prefix/%dkey%d", i, i)
-		key := key.NewStrKey(s).String()
+		key := key.NewStrKey(s)
 		value := randValue()
 		input = append(input, dsq.Entry{
 			Key:   key,
@@ -408,7 +408,7 @@ func subtestQuery(t *testing.T, ds dstore.Datastore, q dsq.Query, count int) {
 
 	for i := 0; i < count; i++ {
 		s := fmt.Sprintf("/prefix/sub/%dkey%d", i, i)
-		key := key.NewStrKey(s).String()
+		key := key.NewStrKey(s)
 		value := randValue()
 		input = append(input, dsq.Entry{
 			Key:   key,
@@ -419,7 +419,7 @@ func subtestQuery(t *testing.T, ds dstore.Datastore, q dsq.Query, count int) {
 
 	for i := 0; i < count; i++ {
 		s := fmt.Sprintf("/capital/%dKEY%d", i, i)
-		key := key.NewStrKey(s).String()
+		key := key.NewStrKey(s)
 		value := randValue()
 		input = append(input, dsq.Entry{
 			Key:   key,
@@ -430,7 +430,7 @@ func subtestQuery(t *testing.T, ds dstore.Datastore, q dsq.Query, count int) {
 
 	t.Logf("putting %d values", len(input))
 	for i, e := range input {
-		err := ds.Put(key.RawStrKey(e.Key), e.Value)
+		err := ds.Put(e.Key, e.Value)
 		if err != nil {
 			t.Fatalf("error on put[%d]: %s", i, err)
 		}
@@ -438,7 +438,7 @@ func subtestQuery(t *testing.T, ds dstore.Datastore, q dsq.Query, count int) {
 
 	t.Log("getting values back")
 	for i, e := range input {
-		val, err := ds.Get(key.RawStrKey(e.Key))
+		val, err := ds.Get(e.Key)
 		if err != nil {
 			t.Fatalf("error on get[%d]: %s", i, err)
 		}
@@ -491,7 +491,7 @@ func subtestQuery(t *testing.T, ds dstore.Datastore, q dsq.Query, count int) {
 
 	t.Log("deleting all keys")
 	for _, e := range input {
-		if err := ds.Delete(key.RawStrKey(e.Key)); err != nil {
+		if err := ds.Delete(e.Key); err != nil {
 			t.Fatal(err)
 		}
 	}

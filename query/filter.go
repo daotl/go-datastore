@@ -3,7 +3,8 @@ package query
 import (
 	"bytes"
 	"fmt"
-	"strings"
+
+	key "github.com/bdware/go-datastore/key"
 )
 
 // Filter is an object that tests ResultEntries
@@ -63,23 +64,23 @@ func (f FilterValueCompare) String() string {
 
 type FilterKeyCompare struct {
 	Op  Op
-	Key string
+	Key key.Key
 }
 
 func (f FilterKeyCompare) Filter(e Entry) bool {
 	switch f.Op {
 	case Equal:
-		return e.Key == f.Key
+		return e.Key.Equal(f.Key)
 	case NotEqual:
-		return e.Key != f.Key
+		return !e.Key.Equal(f.Key)
 	case GreaterThan:
-		return e.Key > f.Key
+		return f.Key.Less(e.Key)
 	case GreaterThanOrEqual:
-		return e.Key >= f.Key
+		return !e.Key.Less(f.Key)
 	case LessThan:
-		return e.Key < f.Key
+		return e.Key.Less(f.Key)
 	case LessThanOrEqual:
-		return e.Key <= f.Key
+		return !f.Key.Less(e.Key)
 	default:
 		panic(fmt.Errorf("unknown op '%s'", f.Op))
 	}
@@ -90,11 +91,11 @@ func (f FilterKeyCompare) String() string {
 }
 
 type FilterKeyPrefix struct {
-	Prefix string
+	Prefix key.Key
 }
 
 func (f FilterKeyPrefix) Filter(e Entry) bool {
-	return strings.HasPrefix(e.Key, f.Prefix)
+	return e.Key.HasPrefix(f.Prefix)
 }
 
 func (f FilterKeyPrefix) String() string {

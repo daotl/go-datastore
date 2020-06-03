@@ -73,10 +73,10 @@ func main() {
 	reader := validatingReader{dat, 0, func(verbose bool) bool {
 		res, _ := replayDB.DB().Query(dsq.Query{})
 		for e := range res.Next() {
-			if e.Entry.Key == "/" {
+			if e.Key.Equal(key.NewStrKey("/")) {
 				continue
 			}
-			if h, _ := previousDB.DB().Has(key.NewStrKey(e.Entry.Key)); !h {
+			if h, _ := previousDB.DB().Has(e.Entry.Key); !h {
 				if verbose {
 					fmt.Printf("failed - script run db has %s not in existing.\n", e.Entry.Key)
 				}
@@ -86,10 +86,10 @@ func main() {
 		// next; make sure the other way is equal.
 		res, _ = previousDB.DB().Query(dsq.Query{})
 		for e := range res.Next() {
-			if e.Entry.Key == "/" {
+			if e.Key.Equal(key.NewStrKey("/")) {
 				continue
 			}
-			if h, _ := replayDB.DB().Has(key.NewStrKey(e.Entry.Key)); !h {
+			if h, _ := replayDB.DB().Has(e.Entry.Key); !h {
 				if verbose {
 					fmt.Printf("failed - existing db has %s not in replay.\n", e.Entry.Key)
 				}

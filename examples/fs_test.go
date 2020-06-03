@@ -37,7 +37,7 @@ func (ks *DSSuite) TestOpen(c *C) {
 
 func (ks *DSSuite) TestBasic(c *C) {
 
-	keys := strsToKeys([]string{
+	keys := key.StrsToKeys([]string{
 		"foo",
 		"foo/bar",
 		"foo/bar/baz",
@@ -62,11 +62,11 @@ func (ks *DSSuite) TestBasic(c *C) {
 		c.Check(err, Equals, nil)
 	}
 
-	expect := []string{
+	expect := key.StrsToKeys([]string{
 		"/foo/bar/baz",
 		"/foo/bar/bazb",
 		"/foo/bar/baz/barb",
-	}
+	})
 	all, err := r.Rest()
 	if err != nil {
 		c.Fatal(err)
@@ -76,7 +76,7 @@ func (ks *DSSuite) TestBasic(c *C) {
 	for _, k := range expect {
 		found := false
 		for _, e := range all {
-			if e.Key == k {
+			if e.Key.Equal(k) {
 				found = true
 			}
 		}
@@ -88,7 +88,7 @@ func (ks *DSSuite) TestBasic(c *C) {
 }
 
 func (ks *DSSuite) TestDiskUsage(c *C) {
-	keys := strsToKeys([]string{
+	keys := key.StrsToKeys([]string{
 		"foo",
 		"foo/bar",
 		"foo/bar/baz",
@@ -112,12 +112,4 @@ func (ks *DSSuite) TestDiskUsage(c *C) {
 	} else {
 		c.Error("should implement PersistentDatastore")
 	}
-}
-
-func strsToKeys(strs []string) []key.Key {
-	keys := make([]key.Key, len(strs))
-	for i, s := range strs {
-		keys[i] = key.NewStrKey(s)
-	}
-	return keys
 }

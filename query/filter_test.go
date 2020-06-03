@@ -1,11 +1,12 @@
 package query
 
 import (
-	"strings"
 	"testing"
+
+	key "github.com/bdware/go-datastore/key"
 )
 
-func testKeyFilter(t *testing.T, f Filter, keys []string, expect []string) {
+func testKeyFilter(t *testing.T, f Filter, keys []key.Key, expect key.KeySlice) {
 	t.Helper()
 	e := make([]Entry, len(keys))
 	for i, k := range keys {
@@ -18,7 +19,7 @@ func testKeyFilter(t *testing.T, f Filter, keys []string, expect []string) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	actual := make([]string, len(actualE))
+	actual := key.KeySlice(make([]key.Key, len(actualE)))
 	for i, e := range actualE {
 		actual[i] = e.Key
 	}
@@ -27,31 +28,31 @@ func testKeyFilter(t *testing.T, f Filter, keys []string, expect []string) {
 		t.Error("expect != actual.", expect, actual)
 	}
 
-	if strings.Join(actual, "") != strings.Join(expect, "") {
+	if !actual.Join().Equal(expect.Join()) {
 		t.Error("expect != actual.", expect, actual)
 	}
 }
 
 func TestFilterKeyCompare(t *testing.T) {
 
-	testKeyFilter(t, FilterKeyCompare{Equal, "/ab"}, sampleKeys, []string{"/ab"})
-	testKeyFilter(t, FilterKeyCompare{GreaterThan, "/ab"}, sampleKeys, []string{
+	testKeyFilter(t, FilterKeyCompare{Equal, key.FilterStrKey("/ab")}, sampleKeys, key.StrsToKeys([]string{"/ab"}))
+	testKeyFilter(t, FilterKeyCompare{GreaterThan, key.FilterStrKey("/ab")}, sampleKeys, key.StrsToKeys([]string{
 		"/ab/c",
 		"/ab/cd",
 		"/ab/ef",
 		"/ab/fg",
 		"/abce",
 		"/abcf",
-	})
-	testKeyFilter(t, FilterKeyCompare{LessThanOrEqual, "/ab"}, sampleKeys, []string{
+	}))
+	testKeyFilter(t, FilterKeyCompare{LessThanOrEqual, key.FilterStrKey("/ab")}, sampleKeys, key.StrsToKeys([]string{
 		"/a",
 		"/ab",
-	})
+	}))
 }
 
 func TestFilterKeyPrefix(t *testing.T) {
 
-	testKeyFilter(t, FilterKeyPrefix{"/a"}, sampleKeys, []string{
+	testKeyFilter(t, FilterKeyPrefix{key.FilterStrKey("/a")}, sampleKeys, key.StrsToKeys([]string{
 		"/ab/c",
 		"/ab/cd",
 		"/ab/ef",
@@ -60,11 +61,11 @@ func TestFilterKeyPrefix(t *testing.T) {
 		"/abce",
 		"/abcf",
 		"/ab",
-	})
-	testKeyFilter(t, FilterKeyPrefix{"/ab/"}, sampleKeys, []string{
+	}))
+	testKeyFilter(t, FilterKeyPrefix{key.FilterStrKey("/ab/")}, sampleKeys, key.StrsToKeys([]string{
 		"/ab/c",
 		"/ab/cd",
 		"/ab/ef",
 		"/ab/fg",
-	})
+	}))
 }

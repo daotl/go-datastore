@@ -4,6 +4,8 @@ import (
 	"path"
 
 	goprocess "github.com/jbenet/goprocess"
+
+	key "github.com/bdware/go-datastore/key"
 )
 
 // NaiveFilter applies a filter to the results.
@@ -131,7 +133,7 @@ func NaiveQueryApply(q Query, qr Results) Results {
 		}
 		// If the prefix is empty, ignore it.
 		if prefix != "/" {
-			qr = NaiveFilter(qr, FilterKeyPrefix{prefix + "/"})
+			qr = NaiveFilter(qr, FilterKeyPrefix{key.FilterStrKey(prefix + "/")})
 		}
 	}
 	for _, f := range q.Filters {
@@ -149,7 +151,7 @@ func NaiveQueryApply(q Query, qr Results) Results {
 	return qr
 }
 
-func ResultEntriesFrom(keys []string, vals [][]byte) []Entry {
+func ResultEntriesFrom(keys []key.Key, vals [][]byte) []Entry {
 	re := make([]Entry, len(keys))
 	for i, k := range keys {
 		re[i] = Entry{Key: k, Size: len(vals[i]), Value: vals[i]}

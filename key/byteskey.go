@@ -130,7 +130,7 @@ func (k BytesKey) ChildBytes(b []byte) Key {
 	return BytesKey{kb}
 }
 
-// IsAncestorOf returns whether this key is a prefix of `other`
+// IsAncestorOf returns whether this key is a prefix of `other` (excluding equals).
 //   NewBytesKey({{BYTES1}}).IsAncestorOf(NewBytesKey({{BYTES1 || BYTES2}}))
 //   true
 // Panic if `other` is not a BytesKey.
@@ -139,7 +139,7 @@ func (k BytesKey) IsAncestorOf(other Key) bool {
 	return len(bother.bytes) > len(k.bytes) && bytes.HasPrefix(bother.bytes, k.bytes)
 }
 
-// IsDescendantOf returns whether this key contains another as a prefix.
+// IsDescendantOf returns whether this key contains another as a prefix (excluding equals).
 //   NewBytesKey({{BYTES1 || BYTES2}}).IsDescendantOf({{BYTES1}})
 //   true
 // Panic if `other` is not a BytesKey.
@@ -152,6 +152,20 @@ func (k BytesKey) IsDescendantOf(other Key) bool {
 // Not applicable for BytesKey.
 func (k BytesKey) IsTopLevel() bool {
 	panic(ErrUnimplemented)
+}
+
+// HasPrefix returns whether this key contains another as a prefix (including equals).
+// Panic if `other` is not a BytesKey.
+func (k BytesKey) HasPrefix(other Key) bool {
+	bother := other.(BytesKey)
+	return bytes.HasPrefix(k.bytes, bother.bytes)
+}
+
+// HasPrefix returns whether this key contains another as a suffix (including equals).
+// Panic if `other` is not a BytesKey.
+func (k BytesKey) HasSuffix(other Key) bool {
+	bother := other.(BytesKey)
+	return bytes.HasSuffix(k.bytes, bother.bytes)
 }
 
 // MarshalJSON implements the json.Marshaler interface,

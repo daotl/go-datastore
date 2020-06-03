@@ -209,8 +209,8 @@ func TestQuerySimple(t *testing.T) {
 		{Prefix: key.NewStrKey("/quux"), Datastore: mapds},
 	})
 
-	const myKey = "/quux/thud"
-	if err := m.Put(key.NewStrKey(myKey), []byte("foobar")); err != nil {
+	var myKey = key.NewStrKey("/quux/thud")
+	if err := m.Put(myKey, []byte("foobar")); err != nil {
 		t.Fatalf("Put error: %v", err)
 	}
 
@@ -224,10 +224,9 @@ func TestQuerySimple(t *testing.T) {
 	}
 	seen := false
 	for _, e := range entries {
-		switch e.Key {
-		case key.NewStrKey(myKey).String():
+		if e.Key.Equal(myKey) {
 			seen = true
-		default:
+		} else {
 			t.Errorf("saw unexpected key: %q", e.Key)
 		}
 	}
@@ -287,7 +286,7 @@ func TestQueryAcrossMounts(t *testing.T) {
 			t.Errorf("expected %d results, got %d", len(values), len(entries))
 		}
 		for _, e := range entries {
-			v, ok := values[e.Key]
+			v, ok := values[e.Key.String()]
 			if !ok {
 				t.Errorf("unexpected key %s", e.Key)
 				continue
@@ -297,7 +296,7 @@ func TestQueryAcrossMounts(t *testing.T) {
 				t.Errorf("key value didn't match expected %s: '%s' - '%s'", e.Key, v, e.Value)
 			}
 
-			values[e.Key] = "seen"
+			values[e.Key.String()] = "seen"
 		}
 	}
 
@@ -357,13 +356,13 @@ func TestQueryAcrossMountsWithSort(t *testing.T) {
 		t.Fatalf("Query Results.Rest fail: %v\n", err)
 	}
 
-	expect := []string{
+	expect := key.StrsToKeys([]string{
 		"/boo/3",
 		"/boo/5/hello",
 		"/boo/9",
 		"/zoo/0",
 		"/zoo/1",
-	}
+	})
 
 	if len(entries) != len(expect) {
 		t.Fatalf("expected %d entries, but got %d", len(expect), len(entries))
@@ -424,17 +423,17 @@ func TestQueryLimitAcrossMountsWithSort(t *testing.T) {
 		t.Fatalf("Query Results.Rest fail: %v\n", err)
 	}
 
-	expect := []string{
+	expect := key.StrsToKeys([]string{
 		"/zoo/3",
 		"/zoo/2",
-	}
+	})
 
 	if len(entries) != len(expect) {
 		t.Fatalf("expected %d entries, but got %d", len(expect), len(entries))
 	}
 
 	for i, e := range expect {
-		if e != entries[i].Key {
+		if !e.Equal(entries[i].Key) {
 			t.Errorf("expected key %s, but got %s", e, entries[i].Key)
 		}
 	}
@@ -488,18 +487,18 @@ func TestQueryLimitAndOffsetAcrossMountsWithSort(t *testing.T) {
 		t.Fatalf("Query Results.Rest fail: %v\n", err)
 	}
 
-	expect := []string{
+	expect := key.StrsToKeys([]string{
 		"/rok/3",
 		"/zoo/0",
 		"/zoo/1",
-	}
+	})
 
 	if len(entries) != len(expect) {
 		t.Fatalf("expected %d entries, but got %d", len(expect), len(entries))
 	}
 
 	for i, e := range expect {
-		if e != entries[i].Key {
+		if !e.Equal(entries[i].Key) {
 			t.Errorf("expected key %s, but got %s", e, entries[i].Key)
 		}
 	}
@@ -542,7 +541,7 @@ func TestQueryFilterAcrossMountsWithSort(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	f := &query.FilterKeyCompare{Op: query.Equal, Key: "/rok/3"}
+	f := &query.FilterKeyCompare{Op: query.Equal, Key: key.FilterStrKey("/rok/3")}
 	q := query.Query{Filters: []query.Filter{f}}
 	res, err := m.Query(q)
 	if err != nil {
@@ -554,16 +553,16 @@ func TestQueryFilterAcrossMountsWithSort(t *testing.T) {
 		t.Fatalf("Query Results.Rest fail: %v\n", err)
 	}
 
-	expect := []string{
+	expect := key.StrsToKeys([]string{
 		"/rok/3",
-	}
+	})
 
 	if len(entries) != len(expect) {
 		t.Fatalf("expected %d entries, but got %d", len(expect), len(entries))
 	}
 
 	for i, e := range expect {
-		if e != entries[i].Key {
+		if !e.Equal(entries[i].Key) {
 			t.Errorf("expected key %s, but got %s", e, entries[i].Key)
 		}
 	}

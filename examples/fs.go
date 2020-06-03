@@ -134,7 +134,7 @@ func (d *Datastore) Query(q query.Query) (query.Results, error) {
 			}
 			var result query.Result
 			key := key.NewStrKey(path)
-			result.Entry.Key = key.String()
+			result.Entry.Key = key
 			if !q.KeysOnly {
 				result.Entry.Value, result.Error = d.Get(key)
 			}

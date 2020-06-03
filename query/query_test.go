@@ -2,11 +2,12 @@ package query
 
 import (
 	"reflect"
-	"strings"
 	"testing"
+
+	key "github.com/bdware/go-datastore/key"
 )
 
-var sampleKeys = []string{
+var sampleKeys = key.StrsToKeys([]string{
 	"/ab/c",
 	"/ab/cd",
 	"/ab/ef",
@@ -15,9 +16,9 @@ var sampleKeys = []string{
 	"/abce",
 	"/abcf",
 	"/ab",
-}
+})
 
-func testResults(t *testing.T, res Results, expect []string) {
+func testResults(t *testing.T, res Results, expect key.KeySlice) {
 	t.Helper()
 
 	actualE, err := res.Rest()
@@ -25,7 +26,7 @@ func testResults(t *testing.T, res Results, expect []string) {
 		t.Fatal(err)
 	}
 
-	actual := make([]string, len(actualE))
+	actual := key.KeySlice(make([]key.Key, len(actualE)))
 	for i, e := range actualE {
 		actual[i] = e.Key
 	}
@@ -34,13 +35,13 @@ func testResults(t *testing.T, res Results, expect []string) {
 		t.Error("expect != actual.", expect, actual)
 	}
 
-	if strings.Join(actual, "") != strings.Join(expect, "") {
+	if !actual.Join().Equal(expect.Join()) {
 		t.Error("expect != actual.", expect, actual)
 	}
 }
 
 func TestNaiveQueryApply(t *testing.T) {
-	testNaiveQueryApply := func(t *testing.T, query Query, keys []string, expect []string) {
+	testNaiveQueryApply := func(t *testing.T, query Query, keys []key.Key, expect []key.Key) {
 		t.Helper()
 		e := make([]Entry, len(keys))
 		for i, k := range keys {
@@ -55,33 +56,33 @@ func TestNaiveQueryApply(t *testing.T) {
 
 	q := Query{Limit: 2}
 
-	testNaiveQueryApply(t, q, sampleKeys, []string{
+	testNaiveQueryApply(t, q, sampleKeys, key.StrsToKeys([]string{
 		"/ab/c",
 		"/ab/cd",
-	})
+	}))
 
 	q = Query{Offset: 3, Limit: 2}
-	testNaiveQueryApply(t, q, sampleKeys, []string{
+	testNaiveQueryApply(t, q, sampleKeys, key.StrsToKeys([]string{
 		"/ab/fg",
 		"/a",
-	})
+	}))
 
-	f := &FilterKeyCompare{Op: Equal, Key: "/ab"}
+	f := &FilterKeyCompare{Op: Equal, Key: key.FilterStrKey("/ab")}
 	q = Query{Filters: []Filter{f}}
-	testNaiveQueryApply(t, q, sampleKeys, []string{
+	testNaiveQueryApply(t, q, sampleKeys, key.StrsToKeys([]string{
 		"/ab",
-	})
+	}))
 
 	q = Query{Prefix: "/ab"}
-	testNaiveQueryApply(t, q, sampleKeys, []string{
+	testNaiveQueryApply(t, q, sampleKeys, key.StrsToKeys([]string{
 		"/ab/c",
 		"/ab/cd",
 		"/ab/ef",
 		"/ab/fg",
-	})
+	}))
 
 	q = Query{Orders: []Order{OrderByKeyDescending{}}}
-	testNaiveQueryApply(t, q, sampleKeys, []string{
+	testNaiveQueryApply(t, q, sampleKeys, key.StrsToKeys([]string{
 		"/abcf",
 		"/abce",
 		"/ab/fg",
@@ -90,7 +91,7 @@ func TestNaiveQueryApply(t *testing.T) {
 		"/ab/c",
 		"/ab",
 		"/a",
-	})
+	}))
 
 	q = Query{
 		Limit:  2,
@@ -98,14 +99,14 @@ func TestNaiveQueryApply(t *testing.T) {
 		Prefix: "/ab",
 		Orders: []Order{OrderByKey{}},
 	}
-	testNaiveQueryApply(t, q, sampleKeys, []string{
+	testNaiveQueryApply(t, q, sampleKeys, key.StrsToKeys([]string{
 		"/ab/cd",
 		"/ab/ef",
-	})
+	}))
 }
 
 func TestLimit(t *testing.T) {
-	testKeyLimit := func(t *testing.T, limit int, keys []string, expect []string) {
+	testKeyLimit := func(t *testing.T, limit int, keys []key.Key, expect []key.Key) {
 		t.Helper()
 		e := make([]Entry, len(keys))
 		for i, k := range keys {
@@ -117,7 +118,7 @@ func TestLimit(t *testing.T) {
 		testResults(t, res, expect)
 	}
 
-	testKeyLimit(t, 0, sampleKeys, []string{ // none
+	testKeyLimit(t, 0, sampleKeys, key.StrsToKeys([]string{ // none
 		"/ab/c",
 		"/ab/cd",
 		"/ab/ef",
@@ -126,9 +127,9 @@ func TestLimit(t *testing.T) {
 		"/abce",
 		"/abcf",
 		"/ab",
-	})
+	}))
 
-	testKeyLimit(t, 10, sampleKeys, []string{ // large
+	testKeyLimit(t, 10, sampleKeys, key.StrsToKeys([]string{ // large
 		"/ab/c",
 		"/ab/cd",
 		"/ab/ef",
@@ -137,17 +138,17 @@ func TestLimit(t *testing.T) {
 		"/abce",
 		"/abcf",
 		"/ab",
-	})
+	}))
 
-	testKeyLimit(t, 2, sampleKeys, []string{
+	testKeyLimit(t, 2, sampleKeys, key.StrsToKeys([]string{
 		"/ab/c",
 		"/ab/cd",
-	})
+	}))
 }
 
 func TestOffset(t *testing.T) {
 
-	testOffset := func(t *testing.T, offset int, keys []string, expect []string) {
+	testOffset := func(t *testing.T, offset int, keys []key.Key, expect []key.Key) {
 		t.Helper()
 		e := make([]Entry, len(keys))
 		for i, k := range keys {
@@ -159,7 +160,7 @@ func TestOffset(t *testing.T) {
 		testResults(t, res, expect)
 	}
 
-	testOffset(t, 0, sampleKeys, []string{ // none
+	testOffset(t, 0, sampleKeys, key.StrsToKeys([]string{ // none
 		"/ab/c",
 		"/ab/cd",
 		"/ab/ef",
@@ -168,19 +169,19 @@ func TestOffset(t *testing.T) {
 		"/abce",
 		"/abcf",
 		"/ab",
-	})
+	}))
 
-	testOffset(t, 10, sampleKeys, []string{ // large
-	})
+	testOffset(t, 10, sampleKeys, key.StrsToKeys([]string{ // large
+	}))
 
-	testOffset(t, 2, sampleKeys, []string{
+	testOffset(t, 2, sampleKeys, key.StrsToKeys([]string{
 		"/ab/ef",
 		"/ab/fg",
 		"/a",
 		"/abce",
 		"/abcf",
 		"/ab",
-	})
+	}))
 }
 
 func TestResultsFromIterator(t *testing.T) {
@@ -200,7 +201,7 @@ func TestResultsFromIteratorNoClose(t *testing.T) {
 	testResultsFromIterator(t, getKeysViaChan, nil)
 }
 
-func testResultsFromIterator(t *testing.T, getKeys func(rs Results) []string, close func() error) {
+func testResultsFromIterator(t *testing.T, getKeys func(rs Results) []key.Key, close func() error) {
 	i := 0
 	results := ResultsFromIterator(Query{}, Iterator{
 		Next: func() (Result, bool) {
@@ -219,7 +220,7 @@ func testResultsFromIterator(t *testing.T, getKeys func(rs Results) []string, cl
 	}
 }
 
-func testResultsFromIteratorWClose(t *testing.T, getKeys func(rs Results) []string) {
+func testResultsFromIteratorWClose(t *testing.T, getKeys func(rs Results) []key.Key) {
 	closeCalled := 0
 	testResultsFromIterator(t, getKeys, func() error {
 		closeCalled++
@@ -230,8 +231,8 @@ func testResultsFromIteratorWClose(t *testing.T, getKeys func(rs Results) []stri
 	}
 }
 
-func getKeysViaNextSync(rs Results) []string {
-	ret := make([]string, 0)
+func getKeysViaNextSync(rs Results) []key.Key {
+	ret := make([]key.Key, 0)
 	for {
 		r, ok := rs.NextSync()
 		if !ok {
@@ -242,17 +243,17 @@ func getKeysViaNextSync(rs Results) []string {
 	return ret
 }
 
-func getKeysViaRest(rs Results) []string {
+func getKeysViaRest(rs Results) []key.Key {
 	rest, _ := rs.Rest()
-	ret := make([]string, 0)
+	ret := make([]key.Key, 0)
 	for _, e := range rest {
 		ret = append(ret, e.Key)
 	}
 	return ret
 }
 
-func getKeysViaChan(rs Results) []string {
-	ret := make([]string, 0)
+func getKeysViaChan(rs Results) []key.Key {
+	ret := make([]key.Key, 0)
 	for r := range rs.Next() {
 		ret = append(ret, r.Key)
 	}
@@ -284,8 +285,8 @@ func TestStringer(t *testing.T) {
 	}
 
 	q.Filters = []Filter{
-		FilterKeyCompare{Op: GreaterThan, Key: "/foo/bar"},
-		FilterKeyCompare{Op: LessThan, Key: "/foo/bar"},
+		FilterKeyCompare{Op: GreaterThan, Key: key.FilterStrKey("/foo/bar")},
+		FilterKeyCompare{Op: LessThan, Key: key.FilterStrKey("/foo/bar")},
 	}
 	expected = `SELECT keys,vals FILTER [KEY > "/foo/bar", KEY < "/foo/bar"] ORDER [VALUE, KEY] OFFSET 10 LIMIT 10`
 	actual = q.String()

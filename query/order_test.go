@@ -1,11 +1,12 @@
 package query
 
 import (
-	"strings"
 	"testing"
+
+	key "github.com/bdware/go-datastore/key"
 )
 
-func testKeyOrder(t *testing.T, f Order, keys []string, expect []string) {
+func testKeyOrder(t *testing.T, f Order, keys []key.Key, expect key.KeySlice) {
 	t.Helper()
 
 	e := make([]Entry, len(keys))
@@ -20,7 +21,7 @@ func testKeyOrder(t *testing.T, f Order, keys []string, expect []string) {
 		t.Fatal(err)
 	}
 
-	actual := make([]string, len(actualE))
+	actual := key.KeySlice(make([]key.Key, len(actualE)))
 	for i, e := range actualE {
 		actual[i] = e.Key
 	}
@@ -29,14 +30,14 @@ func testKeyOrder(t *testing.T, f Order, keys []string, expect []string) {
 		t.Error("expect != actual.", expect, actual)
 	}
 
-	if strings.Join(actual, "") != strings.Join(expect, "") {
+	if !actual.Join().Equal(expect.Join()) {
 		t.Error("expect != actual.", expect, actual)
 	}
 }
 
 func TestOrderByKey(t *testing.T) {
 
-	testKeyOrder(t, OrderByKey{}, sampleKeys, []string{
+	testKeyOrder(t, OrderByKey{}, sampleKeys, key.StrsToKeys([]string{
 		"/a",
 		"/ab",
 		"/ab/c",
@@ -45,8 +46,8 @@ func TestOrderByKey(t *testing.T) {
 		"/ab/fg",
 		"/abce",
 		"/abcf",
-	})
-	testKeyOrder(t, OrderByKeyDescending{}, sampleKeys, []string{
+	}))
+	testKeyOrder(t, OrderByKeyDescending{}, sampleKeys, key.StrsToKeys([]string{
 		"/abcf",
 		"/abce",
 		"/ab/fg",
@@ -55,5 +56,5 @@ func TestOrderByKey(t *testing.T) {
 		"/ab/c",
 		"/ab",
 		"/a",
-	})
+	}))
 }

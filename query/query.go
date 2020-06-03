@@ -5,6 +5,8 @@ import (
 	"time"
 
 	goprocess "github.com/jbenet/goprocess"
+
+	key "github.com/bdware/go-datastore/key"
 )
 
 /*
@@ -108,11 +110,20 @@ func (q Query) String() string {
 
 // Entry is a query result entry.
 type Entry struct {
-	Key        string    // cant be ds.Key because circular imports ...!!!
+	Key        key.Key
 	Value      []byte    // Will be nil if KeysOnly has been passed.
 	Expiration time.Time // Entry expiration timestamp if requested and supported (see TTLDatastore).
 	Size       int       // Might be -1 if the datastore doesn't support listing the size with KeysOnly
 	//                   // or if ReturnsSizes is not set
+}
+
+// EntryKeys
+func EntryKeys(e []Entry) []key.Key {
+	ks := make([]key.Key, len(e))
+	for i, e := range e {
+		ks[i] = e.Key
+	}
+	return ks
 }
 
 // Result is a special entry that includes an error, so that the client
@@ -134,7 +145,7 @@ type Result struct {
 //       break
 //     }
 //
-//     fmt.Println(r.Entry.Key, r.Entry.Value)
+//     fmt.Println(r.Entry.Key.String(), r.Entry.Value)
 //   }
 //
 // or, wait on all results at once:
@@ -142,7 +153,7 @@ type Result struct {
 //   qr, _ := myds.Query(q)
 //   es, _ := qr.Rest()
 //   for _, e := range es {
-//     	fmt.Println(e.Key, e.Value)
+//     	fmt.Println(e.Key.String(), e.Value)
 //   }
 //
 type Results interface {

@@ -81,7 +81,7 @@ func (d *Datastore) Query(q dsq.Query) (dsq.Results, error) {
 				return r, false
 			}
 			if r.Error == nil {
-				r.Entry.Key = d.InvertKey(key.RawStrKey(r.Entry.Key)).String()
+				r.Entry.Key = d.InvertKey(r.Entry.Key)
 			}
 			return r, true
 		},
@@ -157,23 +157,23 @@ orders:
 		case dsq.FilterKeyCompare:
 			child.Filters[i] = dsq.FilterKeyCompare{
 				Op:  f.Op,
-				Key: d.ConvertKey(key.NewStrKey(f.Key)).String(),
+				Key: d.ConvertKey(f.Key),
 			}
 			continue
 		case *dsq.FilterKeyCompare:
 			child.Filters[i] = &dsq.FilterKeyCompare{
 				Op:  f.Op,
-				Key: d.ConvertKey(key.NewStrKey(f.Key)).String(),
+				Key: d.ConvertKey(f.Key),
 			}
 			continue
 		case dsq.FilterKeyPrefix:
 			child.Filters[i] = dsq.FilterKeyPrefix{
-				Prefix: d.ConvertKey(key.NewStrKey(f.Prefix)).String(),
+				Prefix: d.ConvertKey(f.Prefix),
 			}
 			continue
 		case *dsq.FilterKeyPrefix:
 			child.Filters[i] = &dsq.FilterKeyPrefix{
-				Prefix: d.ConvertKey(key.NewStrKey(f.Prefix)).String(),
+				Prefix: d.ConvertKey(f.Prefix),
 			}
 			continue
 		}

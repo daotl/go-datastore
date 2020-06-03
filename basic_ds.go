@@ -67,7 +67,7 @@ func (d *MapDatastore) Delete(key key.Key) (err error) {
 func (d *MapDatastore) Query(q dsq.Query) (dsq.Results, error) {
 	re := make([]dsq.Entry, 0, len(d.values))
 	for k, v := range d.values {
-		e := dsq.Entry{Key: k.String(), Size: len(v)}
+		e := dsq.Entry{Key: k, Size: len(v)}
 		if !q.KeysOnly {
 			e.Value = v
 		}

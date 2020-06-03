@@ -63,6 +63,24 @@ func RawStrKey(s string) Key {
 	return StrKey{s}
 }
 
+// FilterStrKey creates a new Key without safety checking the input, intended to be used as a filter key. Use with care.
+func FilterStrKey(s string) Key {
+	// accept an empty string and fix it to avoid special cases
+	// elsewhere
+	if len(s) == 0 {
+		return StrKey{"/"}
+	}
+
+	// perform a quick sanity check that the key is in the correct
+	// format, if it is not then it is a programmer error and it is
+	// okay to panic
+	if s[0] != '/' {
+		panic("invalid datastore key: " + s)
+	}
+
+	return StrKey{s}
+}
+
 // Deprecated: NewKey just proxy calls to NewStrKey for backward compatibility.
 func NewKey(s string) Key {
 	return NewStrKey(s)
@@ -233,7 +251,7 @@ func (k StrKey) ChildBytes(b []byte) Key {
 	panic(ErrUnimplemented)
 }
 
-// IsAncestorOf returns whether this key is a prefix of `other`
+// IsAncestorOf returns whether this key is a prefix of `other` (excluding equals).
 //   NewStrKey("/Comedy").IsAncestorOf("/Comedy/MontyPython")
 //   true
 // Panic if `other` is not a StrKey.
@@ -255,7 +273,7 @@ func (k StrKey) IsAncestorOf(other Key) bool {
 	return sother.string[len(k.string)] == '/' && sother.string[:len(k.string)] == k.string
 }
 
-// IsDescendantOf returns whether this key contains another as a prefix.
+// IsDescendantOf returns whether this key contains another as a prefix (excluding equals).
 //   NewStrKey("/Comedy/MontyPython").IsDescendantOf("/Comedy")
 //   true
 // Panic if `other` is not a StrKey.
@@ -267,6 +285,20 @@ func (k StrKey) IsDescendantOf(other Key) bool {
 // IsTopLevel returns whether this key has only one namespace.
 func (k StrKey) IsTopLevel() bool {
 	return len(k.List()) == 1
+}
+
+// HasPrefix returns whether this key contains another as a prefix (including equals).
+// Panic if `other` is not a StrKey.
+func (k StrKey) HasPrefix(other Key) bool {
+	sother := other.(StrKey)
+	return strings.HasPrefix(k.string, sother.string)
+}
+
+// HasPrefix returns whether this key contains another as a suffix (including equals).
+// Panic if `other` is not a StrKey.
+func (k StrKey) HasSuffix(other Key) bool {
+	sother := other.(StrKey)
+	return strings.HasSuffix(k.string, sother.string)
 }
 
 // MarshalJSON implements the json.Marshaler interface,
@@ -323,4 +355,12 @@ func NamespaceType(namespace string) string {
 func NamespaceValue(namespace string) string {
 	parts := strings.Split(namespace, ":")
 	return parts[len(parts)-1]
+}
+
+func StrsToKeys(strs []string) []Key {
+	keys := make([]Key, len(strs))
+	for i, s := range strs {
+		keys[i] = NewStrKey(s)
+	}
+	return keys
 }

@@ -3,7 +3,8 @@ package query
 import (
 	"bytes"
 	"sort"
-	"strings"
+
+	key "github.com/bdware/go-datastore/key"
 )
 
 // Order is an object used to order objects
@@ -50,7 +51,7 @@ func (OrderByValueDescending) String() string {
 type OrderByKey struct{}
 
 func (o OrderByKey) Compare(a, b Entry) int {
-	return strings.Compare(a.Key, b.Key)
+	return key.Compare(a.Key, b.Key)
 }
 
 func (OrderByKey) String() string {
@@ -61,7 +62,7 @@ func (OrderByKey) String() string {
 type OrderByKeyDescending struct{}
 
 func (o OrderByKeyDescending) Compare(a, b Entry) int {
-	return -strings.Compare(a.Key, b.Key)
+	return -key.Compare(a.Key, b.Key)
 }
 
 func (OrderByKeyDescending) String() string {
@@ -83,7 +84,7 @@ func Less(orders []Order, a, b Entry) bool {
 	// This gives us a *stable* sort for free. We don't care
 	// preserving the order from the underlying datastore
 	// because it's undefined.
-	return a.Key < b.Key
+	return a.Key.Less(b.Key)
 }
 
 // Sort sorts the given entries using the given orders.

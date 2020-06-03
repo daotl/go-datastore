@@ -9,8 +9,6 @@ package key
 import (
 	"errors"
 	"fmt"
-
-	dsq "github.com/bdware/go-datastore/query"
 )
 
 var ErrUnimplemented = errors.New("function not implemented")
@@ -91,13 +89,29 @@ type Key interface {
 	ChildBytes(b []byte) Key
 	// IsAncestorOf returns whether this key is a prefix of `other`
 	IsAncestorOf(other Key) bool
-	// IsDescendantOf returns whether this key contains another as a prefix.
+	// IsDescendantOf returns whether this key contains another as a prefix (excluding equals).
 	IsDescendantOf(other Key) bool
 	// IsTopLevel returns whether this key has only one namespace.
 	IsTopLevel() bool
+	// HasPrefix returns whether this key contains another as a prefix (including equals).
+	HasPrefix(other Key) bool
+	// HasPrefix returns whether this key contains another as a suffix (including equals).
+	HasSuffix(other Key) bool
 	// MarshalJSON implements the json.Marshaler interface,
 	// keys are represented as JSON strings
 	MarshalJSON() ([]byte, error)
+}
+
+// Compare returns an integer comparing two Keys lexicographically.
+// The result will be 0 if a.Equal(b), -1 if a.Less(b), and +1 if b.Less(a).
+func Compare(a, b Key) int {
+	if a.Equal(b) {
+		return 0
+	}
+	if a.Less(b) {
+		return -1
+	}
+	return +1
 }
 
 // KeySlice attaches the methods of sort.Interface to []Key,
@@ -108,11 +122,14 @@ func (p KeySlice) Len() int           { return len(p) }
 func (p KeySlice) Less(i, j int) bool { return p[i].Less(p[j]) }
 func (p KeySlice) Swap(i, j int)      { p[i], p[j] = p[j], p[i] }
 
-// EntryKeys
-func EntryKeys(e []dsq.Entry) []Key {
-	ks := make([]Key, len(e))
-	for i, e := range e {
-		ks[i] = e.Key
+// Joins keys in the KeySlice into a single key
+func (p KeySlice) Join() Key {
+	if len(p) == 0 {
+		return NewStrKey("")
 	}
-	return ks
+	key := p[0]
+	for _, k := range p[1:] {
+		key = key.Child(k)
+	}
+	return key
 }
