@@ -67,7 +67,7 @@ func TestNaiveQueryApply(t *testing.T) {
 		"/a",
 	}))
 
-	f := &FilterKeyCompare{Op: Equal, Key: key.FilterStrKey("/ab")}
+	f := &FilterKeyCompare{Op: Equal, Key: key.QueryStrKey("/ab")}
 	q = Query{Filters: []Filter{f}}
 	testNaiveQueryApply(t, q, sampleKeys, key.StrsToKeys([]string{
 		"/ab",
@@ -285,8 +285,8 @@ func TestStringer(t *testing.T) {
 	}
 
 	q.Filters = []Filter{
-		FilterKeyCompare{Op: GreaterThan, Key: key.FilterStrKey("/foo/bar")},
-		FilterKeyCompare{Op: LessThan, Key: key.FilterStrKey("/foo/bar")},
+		FilterKeyCompare{Op: GreaterThan, Key: key.QueryStrKey("/foo/bar")},
+		FilterKeyCompare{Op: LessThan, Key: key.QueryStrKey("/foo/bar")},
 	}
 	expected = `SELECT keys,vals FILTER [KEY > "/foo/bar", KEY < "/foo/bar"] ORDER [VALUE, KEY] OFFSET 10 LIMIT 10`
 	actual = q.String()

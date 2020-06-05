@@ -66,8 +66,8 @@ func RawStrKey(s string) Key {
 	return StrKey{s}
 }
 
-// FilterStrKey creates a new Key without safety checking the input, intended to be used as a filter key. Use with care.
-func FilterStrKey(s string) Key {
+// QueryStrKey creates a new Key without safety checking the input, intended to be used for query. Use with care.
+func QueryStrKey(s string) Key {
 	// accept an empty string and fix it to avoid special cases
 	// elsewhere
 	if len(s) == 0 {
@@ -128,6 +128,9 @@ func (k StrKey) Bytes() []byte {
 
 // Equal checks equality of two keys
 func (k StrKey) Equal(k2 Key) bool {
+	if k2 == nil {
+		return false
+	}
 	sk2, ok := k2.(StrKey)
 	return ok && k.string == sk2.string
 }
@@ -135,6 +138,9 @@ func (k StrKey) Equal(k2 Key) bool {
 // Less checks whether this key is sorted lower than another.
 // Panic if `k2` is not a StrKey.
 func (k StrKey) Less(k2 Key) bool {
+	if k2 == nil {
+		return false
+	}
 	if k2.KeyType() != KeyTypeString {
 		panic(ErrNotStrKey)
 	}
@@ -237,6 +243,9 @@ func (k StrKey) Parent() Key {
 //   NewStrKey("/Comedy/MontyPython/Actor:JohnCleese")
 // Panic if `k2` is not a StrKey.
 func (k StrKey) Child(k2 Key) Key {
+	if k2 == nil {
+		return k
+	}
 	if k2.KeyType() != KeyTypeString {
 		panic(ErrNotStrKey)
 	}
@@ -269,6 +278,9 @@ func (k StrKey) ChildBytes(b []byte) Key {
 //   true
 // Panic if `other` is not a StrKey.
 func (k StrKey) IsAncestorOf(other Key) bool {
+	if other == nil {
+		return false
+	}
 	// equivalent to HasPrefix(other, k.string + "/")
 	if other.KeyType() != KeyTypeString {
 		panic(ErrNotStrKey)
@@ -294,6 +306,9 @@ func (k StrKey) IsAncestorOf(other Key) bool {
 //   true
 // Panic if `other` is not a StrKey.
 func (k StrKey) IsDescendantOf(other Key) bool {
+	if other == nil {
+		return true
+	}
 	if other.KeyType() != KeyTypeString {
 		panic(ErrNotStrKey)
 	}
@@ -308,6 +323,9 @@ func (k StrKey) IsTopLevel() bool {
 // HasPrefix returns whether this key contains another as a prefix (including equals).
 // Panic if `other` is not a StrKey.
 func (k StrKey) HasPrefix(other Key) bool {
+	if other == nil {
+		return true
+	}
 	if other.KeyType() != KeyTypeString {
 		panic(ErrNotStrKey)
 	}
@@ -317,6 +335,9 @@ func (k StrKey) HasPrefix(other Key) bool {
 // HasPrefix returns whether this key contains another as a suffix (including equals).
 // Panic if `other` is not a StrKey.
 func (k StrKey) HasSuffix(other Key) bool {
+	if other == nil {
+		return true
+	}
 	if other.KeyType() != KeyTypeString {
 		panic(ErrNotStrKey)
 	}
@@ -383,6 +404,14 @@ func StrsToKeys(strs []string) []Key {
 	keys := make([]Key, len(strs))
 	for i, s := range strs {
 		keys[i] = NewStrKey(s)
+	}
+	return keys
+}
+
+func StrsToQueryKeys(strs []string) []Key {
+	keys := make([]Key, len(strs))
+	for i, s := range strs {
+		keys[i] = QueryStrKey(s)
 	}
 	return keys
 }

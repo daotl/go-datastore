@@ -16,6 +16,15 @@ var (
 	ErrKeyTypeNotSupported = errors.New("key type not supported")
 )
 
+type KeyType uint8
+
+const (
+	// Key backed by string
+	KeyTypeString KeyType = iota
+	// Key backed by byte slice
+	KeyTypeBytes
+)
+
 /*
 A Key represents the unique identifier of an object.
 Keys are meant to be unique across a system.
@@ -107,9 +116,32 @@ type Key interface {
 	MarshalJSON() ([]byte, error)
 }
 
+func Clean(k Key) Key {
+	if k == nil {
+		return nil
+	}
+	switch k.KeyType() {
+	case KeyTypeString:
+		sk := k.(StrKey)
+		sk.Clean()
+		return sk
+	case KeyTypeBytes:
+		return k
+	default:
+		panic(ErrKeyTypeNotSupported)
+	}
+}
+
 // Compare returns an integer comparing two Keys lexicographically.
 // The result will be 0 if a.Equal(b), -1 if a.Less(b), and +1 if b.Less(a).
 func Compare(a, b Key) int {
+	if a == nil {
+		if b == nil {
+			return 0
+		} else {
+			return -1
+		}
+	}
 	if a.Equal(b) {
 		return 0
 	}
@@ -118,13 +150,6 @@ func Compare(a, b Key) int {
 	}
 	return +1
 }
-
-type KeyType uint8
-
-const (
-	KeyTypeString KeyType = iota
-	KeyTypeBytes
-)
 
 // KeySlice attaches the methods of sort.Interface to []Key,
 // sorting in increasing order.

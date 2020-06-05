@@ -48,6 +48,9 @@ func (k BytesKey) Bytes() []byte {
 
 // Equal checks equality of two keys
 func (k BytesKey) Equal(k2 Key) bool {
+	if k2 == nil {
+		return false
+	}
 	bk2, ok := k2.(BytesKey)
 	return ok && bytes.Equal(k.bytes, bk2.bytes)
 }
@@ -55,6 +58,9 @@ func (k BytesKey) Equal(k2 Key) bool {
 // Less checks whether this key is sorted lower than another.
 // Panic if `k2` is not a BytesKey.
 func (k BytesKey) Less(k2 Key) bool {
+	if k2 == nil {
+		return false
+	}
 	if k2.KeyType() != KeyTypeBytes {
 		panic(ErrNotBytesKey)
 	}
@@ -120,6 +126,9 @@ func (k BytesKey) Parent() Key {
 //   NewBytesKey({{BYTES1 || BYTES2}})
 // Panic if `k2` is not a BytesKey.
 func (k BytesKey) Child(k2 Key) Key {
+	if k2 == nil {
+		return k
+	}
 	if k2.KeyType() != KeyTypeBytes {
 		panic(ErrNotBytesKey)
 	}
@@ -147,6 +156,9 @@ func (k BytesKey) ChildBytes(b []byte) Key {
 //   true
 // Panic if `other` is not a BytesKey.
 func (k BytesKey) IsAncestorOf(other Key) bool {
+	if other == nil {
+		return false
+	}
 	if other.KeyType() != KeyTypeBytes {
 		panic(ErrNotBytesKey)
 	}
@@ -159,6 +171,9 @@ func (k BytesKey) IsAncestorOf(other Key) bool {
 //   true
 // Panic if `other` is not a BytesKey.
 func (k BytesKey) IsDescendantOf(other Key) bool {
+	if other == nil {
+		return true
+	}
 	if other.KeyType() != KeyTypeBytes {
 		panic(ErrNotBytesKey)
 	}
@@ -174,6 +189,9 @@ func (k BytesKey) IsTopLevel() bool {
 // HasPrefix returns whether this key contains another as a prefix (including equals).
 // Panic if `other` is not a BytesKey.
 func (k BytesKey) HasPrefix(other Key) bool {
+	if other == nil {
+		return true
+	}
 	if other.KeyType() != KeyTypeBytes {
 		panic(ErrNotBytesKey)
 	}
@@ -183,6 +201,9 @@ func (k BytesKey) HasPrefix(other Key) bool {
 // HasPrefix returns whether this key contains another as a suffix (including equals).
 // Panic if `other` is not a BytesKey.
 func (k BytesKey) HasSuffix(other Key) bool {
+	if other == nil {
+		return true
+	}
 	if other.KeyType() != KeyTypeBytes {
 		panic(ErrNotBytesKey)
 	}

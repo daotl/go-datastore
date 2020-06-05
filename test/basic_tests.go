@@ -242,11 +242,11 @@ func SubtestCombinations(t *testing.T, ds dstore.Datastore) {
 	filters := [][]dsq.Filter{
 		{dsq.FilterKeyCompare{
 			Op:  dsq.Equal,
-			Key: key.FilterStrKey("/0key0"),
+			Key: key.QueryStrKey("/0key0"),
 		}},
 		{dsq.FilterKeyCompare{
 			Op:  dsq.LessThan,
-			Key: key.FilterStrKey("/2"),
+			Key: key.QueryStrKey("/2"),
 		}},
 	}
 	prefixes := []string{
@@ -321,25 +321,25 @@ func SubtestFilter(t *testing.T, ds dstore.Datastore) {
 	}
 	test(dsq.FilterKeyCompare{
 		Op:  dsq.Equal,
-		Key: key.FilterStrKey("/0key0"),
+		Key: key.QueryStrKey("/0key0"),
 	})
 
 	test(dsq.FilterKeyCompare{
 		Op:  dsq.LessThan,
-		Key: key.FilterStrKey("/2"),
+		Key: key.QueryStrKey("/2"),
 	})
 
 	test(&dsq.FilterKeyCompare{
 		Op:  dsq.Equal,
-		Key: key.FilterStrKey("/0key0"),
+		Key: key.QueryStrKey("/0key0"),
 	})
 
 	test(dsq.FilterKeyPrefix{
-		Prefix: key.FilterStrKey("/0key0"),
+		Prefix: key.QueryStrKey("/0key0"),
 	})
 
 	test(&dsq.FilterKeyPrefix{
-		Prefix: key.FilterStrKey("/0key0"),
+		Prefix: key.QueryStrKey("/0key0"),
 	})
 
 	test(dsq.FilterValueCompare{

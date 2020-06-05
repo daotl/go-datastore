@@ -541,7 +541,7 @@ func TestQueryFilterAcrossMountsWithSort(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	f := &query.FilterKeyCompare{Op: query.Equal, Key: key.FilterStrKey("/rok/3")}
+	f := &query.FilterKeyCompare{Op: query.Equal, Key: key.QueryStrKey("/rok/3")}
 	q := query.Query{Filters: []query.Filter{f}}
 	res, err := m.Query(q)
 	if err != nil {
