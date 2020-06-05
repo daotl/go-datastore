@@ -28,7 +28,7 @@ func (ks *DSSuite) TestBasic(c *C) {
 
 func (ks *DSSuite) testBasic(c *C, prefix string) {
 
-	mpds := ds.NewMapDatastore()
+	mpds, _ := ds.NewMapDatastore(key.KeyTypeString)
 	nsds := ns.Wrap(mpds, key.NewStrKey(prefix))
 
 	keys := key.StrsToKeys([]string{

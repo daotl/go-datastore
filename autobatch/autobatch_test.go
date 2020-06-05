@@ -17,11 +17,11 @@ import (
 )
 
 func TestAutobatch(t *testing.T) {
-	dstest.SubtestAll(t, NewAutoBatching(ds.NewMapDatastore(), 16))
+	dstest.SubtestAll(t, NewAutoBatching(dstest.NewMapDatastoreForTest(t), 16))
 }
 
 func TestFlushing(t *testing.T) {
-	child := ds.NewMapDatastore()
+	child := dstest.NewMapDatastoreForTest(t)
 	d := NewAutoBatching(child, 16)
 
 	var keys []key.Key
@@ -112,7 +112,7 @@ func TestFlushing(t *testing.T) {
 }
 
 func TestSync(t *testing.T) {
-	child := ds.NewMapDatastore()
+	child := dstest.NewMapDatastoreForTest(t)
 	d := NewAutoBatching(child, 100)
 
 	put := func(key key.Key) {

@@ -5,15 +5,15 @@ import (
 	"strings"
 	"testing"
 
-	ds "github.com/bdware/go-datastore"
 	failstore "github.com/bdware/go-datastore/failstore"
 	key "github.com/bdware/go-datastore/key"
+	dstest "github.com/bdware/go-datastore/test"
 )
 
 func TestRetryFailure(t *testing.T) {
 	myErr := fmt.Errorf("this is an actual error")
 	var count int
-	fstore := failstore.NewFailstore(ds.NewMapDatastore(), func(op string) error {
+	fstore := failstore.NewFailstore(dstest.NewMapDatastoreForTest(t), func(op string) error {
 		count++
 		return myErr
 	})
@@ -44,7 +44,7 @@ func TestRetryFailure(t *testing.T) {
 
 func TestRealErrorGetsThrough(t *testing.T) {
 	myErr := fmt.Errorf("this is an actual error")
-	fstore := failstore.NewFailstore(ds.NewMapDatastore(), func(op string) error {
+	fstore := failstore.NewFailstore(dstest.NewMapDatastoreForTest(t), func(op string) error {
 		return myErr
 	})
 
@@ -77,7 +77,7 @@ func TestRealErrorAfterTemp(t *testing.T) {
 	myErr := fmt.Errorf("this is an actual error")
 	tempErr := fmt.Errorf("this is a temp error")
 	var count int
-	fstore := failstore.NewFailstore(ds.NewMapDatastore(), func(op string) error {
+	fstore := failstore.NewFailstore(dstest.NewMapDatastoreForTest(t), func(op string) error {
 		count++
 		if count < 3 {
 			return tempErr
@@ -104,7 +104,7 @@ func TestRealErrorAfterTemp(t *testing.T) {
 func TestSuccessAfterTemp(t *testing.T) {
 	tempErr := fmt.Errorf("this is a temp error")
 	var count int
-	fstore := failstore.NewFailstore(ds.NewMapDatastore(), func(op string) error {
+	fstore := failstore.NewFailstore(dstest.NewMapDatastoreForTest(t), func(op string) error {
 		count++
 		if count < 3 {
 			return tempErr

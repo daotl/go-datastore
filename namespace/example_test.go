@@ -9,7 +9,7 @@ import (
 )
 
 func Example() {
-	mp := ds.NewMapDatastore()
+	mp, _ := ds.NewMapDatastore(key.KeyTypeString)
 	ns := nsds.Wrap(mp, key.NewStrKey("/foo/bar"))
 
 	k := key.NewStrKey("/beep")

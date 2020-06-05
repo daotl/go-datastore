@@ -3,15 +3,15 @@ package mount
 import (
 	"testing"
 
-	datastore "github.com/bdware/go-datastore"
 	key "github.com/bdware/go-datastore/key"
+	dstest "github.com/bdware/go-datastore/test"
 )
 
 func TestLookup(t *testing.T) {
-	mapds0 := datastore.NewMapDatastore()
-	mapds1 := datastore.NewMapDatastore()
-	mapds2 := datastore.NewMapDatastore()
-	mapds3 := datastore.NewMapDatastore()
+	mapds0 := dstest.NewMapDatastoreForTest(t)
+	mapds1 := dstest.NewMapDatastoreForTest(t)
+	mapds2 := dstest.NewMapDatastoreForTest(t)
+	mapds3 := dstest.NewMapDatastoreForTest(t)
 	m := New([]Mount{
 		{Prefix: key.NewStrKey("/"), Datastore: mapds0},
 		{Prefix: key.NewStrKey("/foo"), Datastore: mapds1},

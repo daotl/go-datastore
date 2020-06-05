@@ -11,7 +11,10 @@ import (
 	"fmt"
 )
 
-var ErrUnimplemented = errors.New("function not implemented")
+var (
+	ErrUnimplemented       = errors.New("function not implemented")
+	ErrKeyTypeNotSupported = errors.New("key type not supported")
+)
 
 /*
 A Key represents the unique identifier of an object.
@@ -113,6 +116,13 @@ func Compare(a, b Key) int {
 	}
 	return +1
 }
+
+type KeyType uint8
+
+const (
+	KeyTypeString KeyType = iota
+	KeyTypeBytes
+)
 
 // KeySlice attaches the methods of sort.Interface to []Key,
 // sorting in increasing order.

@@ -10,7 +10,7 @@ import (
 )
 
 func TestMapDatastore(t *testing.T) {
-	ds := dstore.NewMapDatastore()
+	ds := dstest.NewMapDatastoreForTest(t)
 	dstest.SubtestAll(t, ds)
 }
 
@@ -23,6 +23,6 @@ func TestNullDatastore(t *testing.T) {
 func TestLogDatastore(t *testing.T) {
 	defer log.SetOutput(log.Writer())
 	log.SetOutput(ioutil.Discard)
-	ds := dstore.NewLogDatastore(dstore.NewMapDatastore(), "")
+	ds := dstore.NewLogDatastore(dstest.NewMapDatastoreForTest(t), "")
 	dstest.SubtestAll(t, ds)
 }

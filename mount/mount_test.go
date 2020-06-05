@@ -23,7 +23,7 @@ func TestPutBadNothing(t *testing.T) {
 }
 
 func TestPutBadNoMount(t *testing.T) {
-	mapds := datastore.NewMapDatastore()
+	mapds := dstest.NewMapDatastoreForTest(t)
 	m := mount.New([]mount.Mount{
 		{Prefix: key.NewStrKey("/redherring"), Datastore: mapds},
 	})
@@ -35,7 +35,7 @@ func TestPutBadNoMount(t *testing.T) {
 }
 
 func TestPut(t *testing.T) {
-	mapds := datastore.NewMapDatastore()
+	mapds := dstest.NewMapDatastoreForTest(t)
 	m := mount.New([]mount.Mount{
 		{Prefix: key.NewStrKey("/quux"), Datastore: mapds},
 	})
@@ -63,7 +63,7 @@ func TestGetBadNothing(t *testing.T) {
 }
 
 func TestGetBadNoMount(t *testing.T) {
-	mapds := datastore.NewMapDatastore()
+	mapds := dstest.NewMapDatastoreForTest(t)
 	m := mount.New([]mount.Mount{
 		{Prefix: key.NewStrKey("/redherring"), Datastore: mapds},
 	})
@@ -75,7 +75,7 @@ func TestGetBadNoMount(t *testing.T) {
 }
 
 func TestGetNotFound(t *testing.T) {
-	mapds := datastore.NewMapDatastore()
+	mapds := dstest.NewMapDatastoreForTest(t)
 	m := mount.New([]mount.Mount{
 		{Prefix: key.NewStrKey("/quux"), Datastore: mapds},
 	})
@@ -87,7 +87,7 @@ func TestGetNotFound(t *testing.T) {
 }
 
 func TestGet(t *testing.T) {
-	mapds := datastore.NewMapDatastore()
+	mapds := dstest.NewMapDatastoreForTest(t)
 	m := mount.New([]mount.Mount{
 		{Prefix: key.NewStrKey("/quux"), Datastore: mapds},
 	})
@@ -118,7 +118,7 @@ func TestHasBadNothing(t *testing.T) {
 }
 
 func TestHasBadNoMount(t *testing.T) {
-	mapds := datastore.NewMapDatastore()
+	mapds := dstest.NewMapDatastoreForTest(t)
 	m := mount.New([]mount.Mount{
 		{Prefix: key.NewStrKey("/redherring"), Datastore: mapds},
 	})
@@ -133,7 +133,7 @@ func TestHasBadNoMount(t *testing.T) {
 }
 
 func TestHasNotFound(t *testing.T) {
-	mapds := datastore.NewMapDatastore()
+	mapds := dstest.NewMapDatastoreForTest(t)
 	m := mount.New([]mount.Mount{
 		{Prefix: key.NewStrKey("/quux"), Datastore: mapds},
 	})
@@ -148,7 +148,7 @@ func TestHasNotFound(t *testing.T) {
 }
 
 func TestHas(t *testing.T) {
-	mapds := datastore.NewMapDatastore()
+	mapds := dstest.NewMapDatastoreForTest(t)
 	m := mount.New([]mount.Mount{
 		{Prefix: key.NewStrKey("/quux"), Datastore: mapds},
 	})
@@ -167,7 +167,7 @@ func TestHas(t *testing.T) {
 }
 
 func TestDeleteNotFound(t *testing.T) {
-	mapds := datastore.NewMapDatastore()
+	mapds := dstest.NewMapDatastoreForTest(t)
 	m := mount.New([]mount.Mount{
 		{Prefix: key.NewStrKey("/quux"), Datastore: mapds},
 	})
@@ -179,7 +179,7 @@ func TestDeleteNotFound(t *testing.T) {
 }
 
 func TestDelete(t *testing.T) {
-	mapds := datastore.NewMapDatastore()
+	mapds := dstest.NewMapDatastoreForTest(t)
 	m := mount.New([]mount.Mount{
 		{Prefix: key.NewStrKey("/quux"), Datastore: mapds},
 	})
@@ -204,7 +204,7 @@ func TestDelete(t *testing.T) {
 }
 
 func TestQuerySimple(t *testing.T) {
-	mapds := datastore.NewMapDatastore()
+	mapds := dstest.NewMapDatastoreForTest(t)
 	m := mount.New([]mount.Mount{
 		{Prefix: key.NewStrKey("/quux"), Datastore: mapds},
 	})
@@ -241,10 +241,10 @@ func TestQuerySimple(t *testing.T) {
 }
 
 func TestQueryAcrossMounts(t *testing.T) {
-	mapds0 := datastore.NewMapDatastore()
-	mapds1 := datastore.NewMapDatastore()
-	mapds2 := datastore.NewMapDatastore()
-	mapds3 := datastore.NewMapDatastore()
+	mapds0 := dstest.NewMapDatastoreForTest(t)
+	mapds1 := dstest.NewMapDatastoreForTest(t)
+	mapds2 := dstest.NewMapDatastoreForTest(t)
+	mapds3 := dstest.NewMapDatastoreForTest(t)
 	m := mount.New([]mount.Mount{
 		{Prefix: key.NewStrKey("/foo"), Datastore: mapds1},
 		{Prefix: key.NewStrKey("/bar"), Datastore: mapds2},
@@ -322,9 +322,9 @@ func TestQueryAcrossMounts(t *testing.T) {
 }
 
 func TestQueryAcrossMountsWithSort(t *testing.T) {
-	mapds0 := datastore.NewMapDatastore()
-	mapds1 := datastore.NewMapDatastore()
-	mapds2 := datastore.NewMapDatastore()
+	mapds0 := dstest.NewMapDatastoreForTest(t)
+	mapds1 := dstest.NewMapDatastoreForTest(t)
+	mapds2 := dstest.NewMapDatastoreForTest(t)
 	m := mount.New([]mount.Mount{
 		{Prefix: key.NewStrKey("/zoo"), Datastore: mapds1},
 		{Prefix: key.NewStrKey("/boo/5"), Datastore: mapds2},
@@ -381,9 +381,9 @@ func TestQueryAcrossMountsWithSort(t *testing.T) {
 }
 
 func TestQueryLimitAcrossMountsWithSort(t *testing.T) {
-	mapds1 := sync.MutexWrap(datastore.NewMapDatastore())
-	mapds2 := sync.MutexWrap(datastore.NewMapDatastore())
-	mapds3 := sync.MutexWrap(datastore.NewMapDatastore())
+	mapds1 := sync.MutexWrap(dstest.NewMapDatastoreForTest(t))
+	mapds2 := sync.MutexWrap(dstest.NewMapDatastoreForTest(t))
+	mapds3 := sync.MutexWrap(dstest.NewMapDatastoreForTest(t))
 	m := mount.New([]mount.Mount{
 		{Prefix: key.NewStrKey("/rok"), Datastore: mapds1},
 		{Prefix: key.NewStrKey("/zoo"), Datastore: mapds2},
@@ -445,9 +445,9 @@ func TestQueryLimitAcrossMountsWithSort(t *testing.T) {
 }
 
 func TestQueryLimitAndOffsetAcrossMountsWithSort(t *testing.T) {
-	mapds1 := sync.MutexWrap(datastore.NewMapDatastore())
-	mapds2 := sync.MutexWrap(datastore.NewMapDatastore())
-	mapds3 := sync.MutexWrap(datastore.NewMapDatastore())
+	mapds1 := sync.MutexWrap(dstest.NewMapDatastoreForTest(t))
+	mapds2 := sync.MutexWrap(dstest.NewMapDatastoreForTest(t))
+	mapds3 := sync.MutexWrap(dstest.NewMapDatastoreForTest(t))
 	m := mount.New([]mount.Mount{
 		{Prefix: key.NewStrKey("/rok"), Datastore: mapds1},
 		{Prefix: key.NewStrKey("/zoo"), Datastore: mapds2},
@@ -510,9 +510,9 @@ func TestQueryLimitAndOffsetAcrossMountsWithSort(t *testing.T) {
 }
 
 func TestQueryFilterAcrossMountsWithSort(t *testing.T) {
-	mapds1 := sync.MutexWrap(datastore.NewMapDatastore())
-	mapds2 := sync.MutexWrap(datastore.NewMapDatastore())
-	mapds3 := sync.MutexWrap(datastore.NewMapDatastore())
+	mapds1 := sync.MutexWrap(dstest.NewMapDatastoreForTest(t))
+	mapds2 := sync.MutexWrap(dstest.NewMapDatastoreForTest(t))
+	mapds3 := sync.MutexWrap(dstest.NewMapDatastoreForTest(t))
 	m := mount.New([]mount.Mount{
 		{Prefix: key.NewStrKey("/rok"), Datastore: mapds1},
 		{Prefix: key.NewStrKey("/zoo"), Datastore: mapds2},
@@ -574,8 +574,8 @@ func TestQueryFilterAcrossMountsWithSort(t *testing.T) {
 }
 
 func TestQueryLimitAndOffsetWithNoData(t *testing.T) {
-	mapds1 := sync.MutexWrap(datastore.NewMapDatastore())
-	mapds2 := sync.MutexWrap(datastore.NewMapDatastore())
+	mapds1 := sync.MutexWrap(dstest.NewMapDatastoreForTest(t))
+	mapds2 := sync.MutexWrap(dstest.NewMapDatastoreForTest(t))
 	m := mount.New([]mount.Mount{
 		{Prefix: key.NewStrKey("/rok"), Datastore: mapds1},
 		{Prefix: key.NewStrKey("/zoo"), Datastore: mapds2},
@@ -605,8 +605,8 @@ func TestQueryLimitAndOffsetWithNoData(t *testing.T) {
 }
 
 func TestQueryLimitWithNotEnoughData(t *testing.T) {
-	mapds1 := sync.MutexWrap(datastore.NewMapDatastore())
-	mapds2 := sync.MutexWrap(datastore.NewMapDatastore())
+	mapds1 := sync.MutexWrap(dstest.NewMapDatastoreForTest(t))
+	mapds2 := sync.MutexWrap(dstest.NewMapDatastoreForTest(t))
 	m := mount.New([]mount.Mount{
 		{Prefix: key.NewStrKey("/rok"), Datastore: mapds1},
 		{Prefix: key.NewStrKey("/zoo"), Datastore: mapds2},
@@ -646,8 +646,8 @@ func TestQueryLimitWithNotEnoughData(t *testing.T) {
 }
 
 func TestQueryOffsetWithNotEnoughData(t *testing.T) {
-	mapds1 := sync.MutexWrap(datastore.NewMapDatastore())
-	mapds2 := sync.MutexWrap(datastore.NewMapDatastore())
+	mapds1 := sync.MutexWrap(dstest.NewMapDatastoreForTest(t))
+	mapds2 := sync.MutexWrap(dstest.NewMapDatastoreForTest(t))
 	m := mount.New([]mount.Mount{
 		{Prefix: key.NewStrKey("/rok"), Datastore: mapds1},
 		{Prefix: key.NewStrKey("/zoo"), Datastore: mapds2},
@@ -684,8 +684,8 @@ func TestQueryOffsetWithNotEnoughData(t *testing.T) {
 }
 
 func TestLookupPrio(t *testing.T) {
-	mapds0 := datastore.NewMapDatastore()
-	mapds1 := datastore.NewMapDatastore()
+	mapds0 := dstest.NewMapDatastoreForTest(t)
+	mapds1 := dstest.NewMapDatastoreForTest(t)
 
 	m := mount.New([]mount.Mount{
 		{Prefix: key.NewStrKey("/"), Datastore: mapds0},
@@ -725,9 +725,9 @@ func TestLookupPrio(t *testing.T) {
 }
 
 func TestNestedMountSync(t *testing.T) {
-	internalDSRoot := datastore.NewMapDatastore()
-	internalDSFoo := datastore.NewMapDatastore()
-	internalDSFooBar := datastore.NewMapDatastore()
+	internalDSRoot := dstest.NewMapDatastoreForTest(t)
+	internalDSFoo := dstest.NewMapDatastoreForTest(t)
+	internalDSFooBar := dstest.NewMapDatastoreForTest(t)
 
 	m := mount.New([]mount.Mount{
 		{Prefix: key.NewStrKey("/foo"), Datastore: autobatch.NewAutoBatching(internalDSFoo, 10)},
@@ -798,7 +798,7 @@ func (d *errQueryDS) Query(q query.Query) (query.Results, error) {
 
 func TestErrQueryClose(t *testing.T) {
 	eqds := &errQueryDS{}
-	mds := datastore.NewMapDatastore()
+	mds := dstest.NewMapDatastoreForTest(t)
 
 	m := mount.New([]mount.Mount{
 		{Prefix: key.NewStrKey("/"), Datastore: mds},
@@ -836,10 +836,10 @@ func TestMaintenanceFunctions(t *testing.T) {
 }
 
 func TestSuite(t *testing.T) {
-	mapds0 := datastore.NewMapDatastore()
-	mapds1 := datastore.NewMapDatastore()
-	mapds2 := datastore.NewMapDatastore()
-	mapds3 := datastore.NewMapDatastore()
+	mapds0 := dstest.NewMapDatastoreForTest(t)
+	mapds1 := dstest.NewMapDatastoreForTest(t)
+	mapds2 := dstest.NewMapDatastoreForTest(t)
+	mapds3 := dstest.NewMapDatastoreForTest(t)
 	m := mount.New([]mount.Mount{
 		{Prefix: key.NewStrKey("/prefix"), Datastore: mapds1},
 		{Prefix: key.NewStrKey("/prefix/sub"), Datastore: mapds2},

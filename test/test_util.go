@@ -157,9 +157,10 @@ type testDatastore struct {
 }
 
 func NewTestDatastore(testErrors bool) *testDatastore {
+	ds, _ := dstore.NewMapDatastore(key.KeyTypeString)
 	return &testDatastore{
 		testErrors:   testErrors,
-		MapDatastore: dstore.NewMapDatastore(),
+		MapDatastore: ds,
 	}
 }
 
@@ -182,4 +183,12 @@ func (d *testDatastore) CollectGarbage() error {
 		return TestError
 	}
 	return nil
+}
+
+func NewMapDatastoreForTest(t *testing.T) *dstore.MapDatastore {
+	ds, err := dstore.NewMapDatastore(key.KeyTypeString)
+	if err != nil {
+		t.Fatal("error creating MapDatastore: ", err)
+	}
+	return ds
 }

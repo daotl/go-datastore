@@ -11,21 +11,26 @@ import (
 
 // MapDatastore uses a standard Go map for internal storage.
 type MapDatastore struct {
-	values map[key.Key][]byte
+	ktype  key.KeyType
+	values map[string][]byte
 }
 
 // NewMapDatastore constructs a MapDatastore. It is _not_ thread-safe by
 // default, wrap using sync.MutexWrap if you need thread safety (the answer here
 // is usually yes).
-func NewMapDatastore() (d *MapDatastore) {
-	return &MapDatastore{
-		values: make(map[key.Key][]byte),
+func NewMapDatastore(ktype key.KeyType) (d *MapDatastore, err error) {
+	if !(ktype == key.KeyTypeString || ktype == key.KeyTypeBytes) {
+		return nil, key.ErrKeyTypeNotSupported
 	}
+	return &MapDatastore{
+		ktype:  ktype,
+		values: make(map[string][]byte),
+	}, nil
 }
 
 // Put implements Datastore.Put
 func (d *MapDatastore) Put(key key.Key, value []byte) (err error) {
-	d.values[key] = value
+	d.values[key.String()] = value
 	return nil
 }
 
@@ -36,7 +41,7 @@ func (d *MapDatastore) Sync(prefix key.Key) error {
 
 // Get implements Datastore.Get
 func (d *MapDatastore) Get(key key.Key) (value []byte, err error) {
-	val, found := d.values[key]
+	val, found := d.values[key.String()]
 	if !found {
 		return nil, ErrNotFound
 	}
@@ -45,13 +50,13 @@ func (d *MapDatastore) Get(key key.Key) (value []byte, err error) {
 
 // Has implements Datastore.Has
 func (d *MapDatastore) Has(key key.Key) (exists bool, err error) {
-	_, found := d.values[key]
+	_, found := d.values[key.String()]
 	return found, nil
 }
 
 // GetSize implements Datastore.GetSize
 func (d *MapDatastore) GetSize(key key.Key) (size int, err error) {
-	if v, found := d.values[key]; found {
+	if v, found := d.values[key.String()]; found {
 		return len(v), nil
 	}
 	return -1, ErrNotFound
@@ -59,7 +64,7 @@ func (d *MapDatastore) GetSize(key key.Key) (size int, err error) {
 
 // Delete implements Datastore.Delete
 func (d *MapDatastore) Delete(key key.Key) (err error) {
-	delete(d.values, key)
+	delete(d.values, key.String())
 	return nil
 }
 
@@ -67,7 +72,16 @@ func (d *MapDatastore) Delete(key key.Key) (err error) {
 func (d *MapDatastore) Query(q dsq.Query) (dsq.Results, error) {
 	re := make([]dsq.Entry, 0, len(d.values))
 	for k, v := range d.values {
-		e := dsq.Entry{Key: k, Size: len(v)}
+		var ek key.Key
+		switch d.ktype {
+		case key.KeyTypeString:
+			ek = key.RawStrKey(k)
+		case 1:
+			ek = key.NewBytesKey([]byte(k))
+		default:
+			panic(key.ErrKeyTypeNotSupported)
+		}
+		e := dsq.Entry{Key: ek, Size: len(v)}
 		if !q.KeysOnly {
 			e.Value = v
 		}
