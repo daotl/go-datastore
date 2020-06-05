@@ -14,11 +14,12 @@ type Datastore struct {
 	child ds.Batching
 
 	// TODO: discuss making ds.Batch implement the full ds.Datastore interface
-	buffer           map[key.Key]op
+	buffer           map[string]op
 	maxBufferEntries int
 }
 
 type op struct {
+	key    key.Key
 	delete bool
 	value  []byte
 }
@@ -29,14 +30,14 @@ type op struct {
 func NewAutoBatching(d ds.Batching, size int) *Datastore {
 	return &Datastore{
 		child:            d,
-		buffer:           make(map[key.Key]op, size),
+		buffer:           make(map[string]op, size),
 		maxBufferEntries: size,
 	}
 }
 
 // Delete deletes a key/value
 func (d *Datastore) Delete(k key.Key) error {
-	d.buffer[k] = op{delete: true}
+	d.buffer[k.String()] = op{key: k, delete: true}
 	if len(d.buffer) > d.maxBufferEntries {
 		return d.Flush()
 	}
@@ -45,7 +46,7 @@ func (d *Datastore) Delete(k key.Key) error {
 
 // Get retrieves a value given a key.
 func (d *Datastore) Get(k key.Key) ([]byte, error) {
-	o, ok := d.buffer[k]
+	o, ok := d.buffer[k.String()]
 	if ok {
 		if o.delete {
 			return nil, ds.ErrNotFound
@@ -58,7 +59,7 @@ func (d *Datastore) Get(k key.Key) ([]byte, error) {
 
 // Put stores a key/value.
 func (d *Datastore) Put(k key.Key, val []byte) error {
-	d.buffer[k] = op{value: val}
+	d.buffer[k.String()] = op{key: k, value: val}
 	if len(d.buffer) > d.maxBufferEntries {
 		return d.Flush()
 	}
@@ -73,7 +74,8 @@ func (d *Datastore) Sync(prefix key.Key) error {
 		return err
 	}
 
-	for k, o := range d.buffer {
+	for key, o := range d.buffer {
+		k := o.key
 		if !(k.Equal(prefix) || k.IsDescendantOf(prefix)) {
 			continue
 		}
@@ -88,7 +90,7 @@ func (d *Datastore) Sync(prefix key.Key) error {
 			return err
 		}
 
-		delete(d.buffer, k)
+		delete(d.buffer, key)
 	}
 
 	return b.Commit()
@@ -101,7 +103,8 @@ func (d *Datastore) Flush() error {
 		return err
 	}
 
-	for k, o := range d.buffer {
+	for _, o := range d.buffer {
+		k := o.key
 		var err error
 		if o.delete {
 			err = b.Delete(k)
@@ -113,14 +116,14 @@ func (d *Datastore) Flush() error {
 		}
 	}
 	// clear out buffer
-	d.buffer = make(map[key.Key]op, d.maxBufferEntries)
+	d.buffer = make(map[string]op, d.maxBufferEntries)
 
 	return b.Commit()
 }
 
 // Has checks if a key is stored.
 func (d *Datastore) Has(k key.Key) (bool, error) {
-	o, ok := d.buffer[k]
+	o, ok := d.buffer[k.String()]
 	if ok {
 		return !o.delete, nil
 	}
@@ -130,7 +133,7 @@ func (d *Datastore) Has(k key.Key) (bool, error) {
 
 // GetSize implements Datastore.GetSize
 func (d *Datastore) GetSize(k key.Key) (int, error) {
-	o, ok := d.buffer[k]
+	o, ok := d.buffer[k.String()]
 	if ok {
 		if o.delete {
 			return -1, ds.ErrNotFound

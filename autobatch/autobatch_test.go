@@ -154,18 +154,18 @@ func TestSync(t *testing.T) {
 func internalSyncTest(t *testing.T, d, child ds.Datastore, op, undoOp func(key.Key),
 	checkOp, checkUndoOp func(ds.Datastore, key.Key)) {
 	var keys []key.Key
-	keymap := make(map[key.Key]int)
+	keymap := make(map[string]int)
 	for i := 0; i < 4; i++ {
 		k := key.NewStrKey(fmt.Sprintf("%d", i))
-		keymap[k] = len(keys)
+		keymap[k.String()] = len(keys)
 		keys = append(keys, k)
 		for j := 0; j < 2; j++ {
 			k := key.NewStrKey(fmt.Sprintf("%d/%d", i, j))
-			keymap[k] = len(keys)
+			keymap[k.String()] = len(keys)
 			keys = append(keys, k)
 			for k := 0; k < 2; k++ {
 				k := key.NewStrKey(fmt.Sprintf("%d/%d/%d", i, j, k))
-				keymap[k] = len(keys)
+				keymap[k.String()] = len(keys)
 				keys = append(keys, k)
 			}
 		}
@@ -246,11 +246,11 @@ func internalSyncTest(t *testing.T, d, child ds.Datastore, op, undoOp func(key.K
 	checkOp(d, deletedKey)
 }
 
-func checkKeyRange(t *testing.T, keymap map[key.Key]int, keys []key.Key,
+func checkKeyRange(t *testing.T, keymap map[string]int, keys []key.Key,
 	d ds.Datastore, validKeyRanges [][]string, checkFn func(ds.Datastore, key.Key)) {
 	t.Helper()
 	for _, validKeyBoundaries := range validKeyRanges {
-		start, end := keymap[key.NewStrKey(validKeyBoundaries[0])], keymap[key.NewStrKey(validKeyBoundaries[1])]
+		start, end := keymap[validKeyBoundaries[0]], keymap[validKeyBoundaries[1]]
 		for _, k := range keys[start:end] {
 			checkFn(d, k)
 		}

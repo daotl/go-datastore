@@ -3,6 +3,7 @@ package datastore
 import key "github.com/bdware/go-datastore/key"
 
 type op struct {
+	key    key.Key
 	delete bool
 	value  []byte
 }
@@ -10,35 +11,35 @@ type op struct {
 // basicBatch implements the transaction interface for datastores who do
 // not have any sort of underlying transactional support
 type basicBatch struct {
-	ops map[key.Key]op
+	ops map[string]op
 
 	target Datastore
 }
 
 func NewBasicBatch(ds Datastore) Batch {
 	return &basicBatch{
-		ops:    make(map[key.Key]op),
+		ops:    make(map[string]op),
 		target: ds,
 	}
 }
 
 func (bt *basicBatch) Put(key key.Key, val []byte) error {
-	bt.ops[key] = op{value: val}
+	bt.ops[key.String()] = op{key: key, value: val}
 	return nil
 }
 
 func (bt *basicBatch) Delete(key key.Key) error {
-	bt.ops[key] = op{delete: true}
+	bt.ops[key.String()] = op{key: key, delete: true}
 	return nil
 }
 
 func (bt *basicBatch) Commit() error {
 	var err error
-	for k, op := range bt.ops {
+	for _, op := range bt.ops {
 		if op.delete {
-			err = bt.target.Delete(k)
+			err = bt.target.Delete(op.key)
 		} else {
-			err = bt.target.Put(k, op.value)
+			err = bt.target.Put(op.key, op.value)
 		}
 		if err != nil {
 			break
