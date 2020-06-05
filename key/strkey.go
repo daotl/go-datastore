@@ -8,11 +8,14 @@ package key
 
 import (
 	"encoding/json"
+	"errors"
 	"path"
 	"strings"
 
 	"github.com/google/uuid"
 )
+
+var ErrNotStrKey = errors.New("argument is not of type StrKey")
 
 /*
 A StrKey represents the unique identifier of an object.
@@ -113,6 +116,11 @@ func (k StrKey) String() string {
 	return k.string
 }
 
+// KeyType returns the key type (KeyTypeString)
+func (k StrKey) KeyType() KeyType {
+	return KeyTypeString
+}
+
 // Bytes returns the string value of Key as a []byte
 func (k StrKey) Bytes() []byte {
 	return []byte(k.string)
@@ -127,9 +135,11 @@ func (k StrKey) Equal(k2 Key) bool {
 // Less checks whether this key is sorted lower than another.
 // Panic if `k2` is not a StrKey.
 func (k StrKey) Less(k2 Key) bool {
-	sk2 := k2.(StrKey)
+	if k2.KeyType() != KeyTypeString {
+		panic(ErrNotStrKey)
+	}
 	list1 := k.List()
-	list2 := sk2.List()
+	list2 := k2.List()
 	for i, c1 := range list1 {
 		if len(list2) < (i + 1) {
 			return false
@@ -227,6 +237,9 @@ func (k StrKey) Parent() Key {
 //   NewStrKey("/Comedy/MontyPython/Actor:JohnCleese")
 // Panic if `k2` is not a StrKey.
 func (k StrKey) Child(k2 Key) Key {
+	if k2.KeyType() != KeyTypeString {
+		panic(ErrNotStrKey)
+	}
 	sk2 := k2.(StrKey)
 	switch {
 	case k.string == "/":
@@ -257,6 +270,9 @@ func (k StrKey) ChildBytes(b []byte) Key {
 // Panic if `other` is not a StrKey.
 func (k StrKey) IsAncestorOf(other Key) bool {
 	// equivalent to HasPrefix(other, k.string + "/")
+	if other.KeyType() != KeyTypeString {
+		panic(ErrNotStrKey)
+	}
 	sother := other.(StrKey)
 
 	if len(sother.string) <= len(k.string) {
@@ -278,8 +294,10 @@ func (k StrKey) IsAncestorOf(other Key) bool {
 //   true
 // Panic if `other` is not a StrKey.
 func (k StrKey) IsDescendantOf(other Key) bool {
-	sother := other.(StrKey)
-	return sother.IsAncestorOf(k)
+	if other.KeyType() != KeyTypeString {
+		panic(ErrNotStrKey)
+	}
+	return other.(StrKey).IsAncestorOf(k)
 }
 
 // IsTopLevel returns whether this key has only one namespace.
@@ -290,15 +308,19 @@ func (k StrKey) IsTopLevel() bool {
 // HasPrefix returns whether this key contains another as a prefix (including equals).
 // Panic if `other` is not a StrKey.
 func (k StrKey) HasPrefix(other Key) bool {
-	sother := other.(StrKey)
-	return strings.HasPrefix(k.string, sother.string)
+	if other.KeyType() != KeyTypeString {
+		panic(ErrNotStrKey)
+	}
+	return strings.HasPrefix(k.string, other.(StrKey).string)
 }
 
 // HasPrefix returns whether this key contains another as a suffix (including equals).
 // Panic if `other` is not a StrKey.
 func (k StrKey) HasSuffix(other Key) bool {
-	sother := other.(StrKey)
-	return strings.HasSuffix(k.string, sother.string)
+	if other.KeyType() != KeyTypeString {
+		panic(ErrNotStrKey)
+	}
+	return strings.HasSuffix(k.string, other.(StrKey).string)
 }
 
 // MarshalJSON implements the json.Marshaler interface,

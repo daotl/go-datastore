@@ -38,6 +38,8 @@ include the object type::
 */
 type Key interface {
 	fmt.Stringer
+	// KeyType returns the key type
+	KeyType() KeyType
 	// Bytes returns the string value of Key as a []byte
 	Bytes() []byte
 	// Equal checks equality of two keys

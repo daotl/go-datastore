@@ -7,10 +7,13 @@ package key
 import (
 	"bytes"
 	"encoding/json"
+	"errors"
 	"strings"
 
 	"github.com/google/uuid"
 )
+
+var ErrNotBytesKey = errors.New("argument is not of type BytesKey")
 
 // BytesKey is a Key implementation backed by byte slice.
 type BytesKey struct {
@@ -33,6 +36,11 @@ func (k BytesKey) String() string {
 	return string(k.bytes)
 }
 
+// KeyType returns the key type (KeyTypeBytes)
+func (k BytesKey) KeyType() KeyType {
+	return KeyTypeBytes
+}
+
 // Bytes returns the string value of Key as a []byte
 func (k BytesKey) Bytes() []byte {
 	return k.bytes
@@ -47,8 +55,10 @@ func (k BytesKey) Equal(k2 Key) bool {
 // Less checks whether this key is sorted lower than another.
 // Panic if `k2` is not a BytesKey.
 func (k BytesKey) Less(k2 Key) bool {
-	bk2 := k2.(BytesKey)
-	return bytes.Compare(k.bytes, bk2.bytes) == -1
+	if k2.KeyType() != KeyTypeBytes {
+		panic(ErrNotBytesKey)
+	}
+	return bytes.Compare(k.bytes, k2.(BytesKey).bytes) == -1
 }
 
 // List returns the `list` representation of this Key.
@@ -110,8 +120,10 @@ func (k BytesKey) Parent() Key {
 //   NewBytesKey({{BYTES1 || BYTES2}})
 // Panic if `k2` is not a BytesKey.
 func (k BytesKey) Child(k2 Key) Key {
-	bk2 := k2.(BytesKey)
-	return k.ChildBytes(bk2.bytes)
+	if k2.KeyType() != KeyTypeBytes {
+		panic(ErrNotBytesKey)
+	}
+	return k.ChildBytes(k2.(BytesKey).bytes)
 }
 
 // ChildString returns the `child` Key of this Key -- string helper.
@@ -135,6 +147,9 @@ func (k BytesKey) ChildBytes(b []byte) Key {
 //   true
 // Panic if `other` is not a BytesKey.
 func (k BytesKey) IsAncestorOf(other Key) bool {
+	if other.KeyType() != KeyTypeBytes {
+		panic(ErrNotBytesKey)
+	}
 	bother := other.(BytesKey)
 	return len(bother.bytes) > len(k.bytes) && bytes.HasPrefix(bother.bytes, k.bytes)
 }
@@ -144,8 +159,10 @@ func (k BytesKey) IsAncestorOf(other Key) bool {
 //   true
 // Panic if `other` is not a BytesKey.
 func (k BytesKey) IsDescendantOf(other Key) bool {
-	bother := other.(BytesKey)
-	return bother.IsAncestorOf(k)
+	if other.KeyType() != KeyTypeBytes {
+		panic(ErrNotBytesKey)
+	}
+	return other.(BytesKey).IsAncestorOf(k)
 }
 
 // IsTopLevel returns whether this key has only one namespace.
@@ -157,15 +174,19 @@ func (k BytesKey) IsTopLevel() bool {
 // HasPrefix returns whether this key contains another as a prefix (including equals).
 // Panic if `other` is not a BytesKey.
 func (k BytesKey) HasPrefix(other Key) bool {
-	bother := other.(BytesKey)
-	return bytes.HasPrefix(k.bytes, bother.bytes)
+	if other.KeyType() != KeyTypeBytes {
+		panic(ErrNotBytesKey)
+	}
+	return bytes.HasPrefix(k.bytes, other.(BytesKey).bytes)
 }
 
 // HasPrefix returns whether this key contains another as a suffix (including equals).
 // Panic if `other` is not a BytesKey.
 func (k BytesKey) HasSuffix(other Key) bool {
-	bother := other.(BytesKey)
-	return bytes.HasSuffix(k.bytes, bother.bytes)
+	if other.KeyType() != KeyTypeBytes {
+		panic(ErrNotBytesKey)
+	}
+	return bytes.HasSuffix(k.bytes, other.(BytesKey).bytes)
 }
 
 // MarshalJSON implements the json.Marshaler interface,
