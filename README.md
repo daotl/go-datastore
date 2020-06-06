@@ -50,7 +50,7 @@ Feel free to join in. All welcome. Open an [issue](https://github.com/BDWare/go-
 
 [MIT](LICENSE)
 
-Copyright for portions of this fork are held by [Protocol Labs, 2016] as part of the original [go-libp2p-kad-dht](https://github.com/libp2p/go-libp2p-kad-dht) project.
+Copyright for portions of this fork are held by [Protocol Labs, 2016] as part of the original [go-datastore](https://github.com/libp2p/go-datastore) project.
 
 All other copyright for this fork are held by [The BDWare Authors, 2020].
 
