@@ -316,8 +316,7 @@ func (d *Datastore) Query(master query.Query) (query.Results, error) {
 		ReturnsSizes:      master.ReturnsSizes,
 	}
 
-	prefix := key.NewStrKey(childQuery.Prefix)
-	dses, mounts, rests := d.lookupAll(prefix)
+	dses, mounts, rests := d.lookupAll(key.Clean(childQuery.Prefix))
 
 	queries := &querySet{
 		query: childQuery,
@@ -327,10 +326,9 @@ func (d *Datastore) Query(master query.Query) (query.Results, error) {
 	for i := range dses {
 		mount := mounts[i]
 		dstore := dses[i]
-		rest := rests[i]
 
 		qi := childQuery
-		qi.Prefix = rest.String()
+		qi.Prefix = rests[i]
 		results, err := dstore.Query(qi)
 
 		if err != nil {

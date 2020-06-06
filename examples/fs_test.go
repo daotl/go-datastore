@@ -57,7 +57,7 @@ func (ks *DSSuite) TestBasic(c *C) {
 		c.Check(bytes.Equal(v, []byte(k.String())), Equals, true)
 	}
 
-	r, err := ks.ds.Query(query.Query{Prefix: "/foo/bar/"})
+	r, err := ks.ds.Query(query.Query{Prefix: key.QueryStrKey("/foo/bar/")})
 	if err != nil {
 		c.Check(err, Equals, nil)
 	}

@@ -249,11 +249,11 @@ func SubtestCombinations(t *testing.T, ds dstore.Datastore) {
 			Key: key.QueryStrKey("/2"),
 		}},
 	}
-	prefixes := []string{
+	prefixes := key.StrsToQueryKeys([]string{
 		"",
 		"/prefix",
 		"/0", // keys exist under this prefix but they shouldn't match.
-	}
+	})
 	orders := [][]dsq.Order{
 		{dsq.OrderByKey{}},
 		{dsq.OrderByKeyDescending{}},
@@ -358,7 +358,7 @@ func SubtestPrefix(t *testing.T, ds dstore.Datastore) {
 	test := func(prefix string) {
 		t.Run(prefix, func(t *testing.T) {
 			subtestQuery(t, ds, dsq.Query{
-				Prefix: prefix,
+				Prefix: key.QueryStrKey(prefix),
 			}, ElemCount)
 		})
 	}

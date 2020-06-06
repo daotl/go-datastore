@@ -119,21 +119,28 @@ func NaiveOrder(qr Results, orders ...Order) Results {
 }
 
 func NaiveQueryApply(q Query, qr Results) Results {
-	if q.Prefix != "" {
-		// Clean the prefix as a key and append / so a prefix of /bar
-		// only finds /bar/baz, not /barbaz.
-		prefix := q.Prefix
-		if len(prefix) == 0 {
-			prefix = "/"
-		} else {
-			if prefix[0] != '/' {
-				prefix = "/" + prefix
+	if q.Prefix != nil && q.Prefix.String() != "" {
+		switch q.Prefix.KeyType() {
+		case key.KeyTypeString:
+			// Clean the prefix as a key and append / so a prefix of /bar
+			// only finds /bar/baz, not /barbaz.
+			prefix := q.Prefix.String()
+			if len(prefix) == 0 {
+				prefix = "/"
+			} else {
+				if prefix[0] != '/' {
+					prefix = "/" + prefix
+				}
+				prefix = path.Clean(prefix)
 			}
-			prefix = path.Clean(prefix)
-		}
-		// If the prefix is empty, ignore it.
-		if prefix != "/" {
-			qr = NaiveFilter(qr, FilterKeyPrefix{key.QueryStrKey(prefix + "/")})
+			// If the prefix is empty, ignore it.
+			if prefix != "/" {
+				qr = NaiveFilter(qr, FilterKeyPrefix{key.QueryStrKey(prefix + "/")})
+			}
+		case key.KeyTypeBytes:
+			qr = NaiveFilter(qr, FilterKeyPrefix{q.Prefix})
+		default:
+			panic(key.ErrKeyTypeNotSupported)
 		}
 	}
 	for _, f := range q.Filters {

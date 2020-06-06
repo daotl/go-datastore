@@ -214,7 +214,7 @@ func TestQuerySimple(t *testing.T) {
 		t.Fatalf("Put error: %v", err)
 	}
 
-	res, err := m.Query(query.Query{Prefix: "/quux"})
+	res, err := m.Query(query.Query{Prefix: key.QueryStrKey("/quux")})
 	if err != nil {
 		t.Fatalf("Query fail: %v\n", err)
 	}
@@ -270,7 +270,7 @@ func TestQueryAcrossMounts(t *testing.T) {
 
 	expect := func(prefix string, values map[string]string) {
 		t.Helper()
-		res, err := m.Query(query.Query{Prefix: prefix})
+		res, err := m.Query(query.Query{Prefix: key.QueryStrKey(prefix)})
 		if err != nil {
 			t.Fatalf("Query fail: %v\n", err)
 		}

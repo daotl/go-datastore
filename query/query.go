@@ -52,7 +52,7 @@ Notes:
   * Limits & Offset: Limits and offsets are applied after everything else.
 */
 type Query struct {
-	Prefix            string   // namespaces the query to results whose keys have Prefix
+	Prefix            key.Key  // namespaces the query to results whose keys have Prefix
 	Filters           []Filter // filter results. apply sequentially
 	Orders            []Order  // order results. apply hierarchically
 	Limit             int      // maximum number of results
@@ -77,7 +77,7 @@ func (q Query) String() string {
 
 	s += " "
 
-	if q.Prefix != "" {
+	if q.Prefix != nil && q.Prefix.String() != "" {
 		s += fmt.Sprintf("FROM %q ", q.Prefix)
 	}
 

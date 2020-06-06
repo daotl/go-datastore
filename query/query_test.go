@@ -73,7 +73,7 @@ func TestNaiveQueryApply(t *testing.T) {
 		"/ab",
 	}))
 
-	q = Query{Prefix: "/ab"}
+	q = Query{Prefix: key.QueryStrKey("/ab")}
 	testNaiveQueryApply(t, q, sampleKeys, key.StrsToKeys([]string{
 		"/ab/c",
 		"/ab/cd",
@@ -96,7 +96,7 @@ func TestNaiveQueryApply(t *testing.T) {
 	q = Query{
 		Limit:  2,
 		Offset: 1,
-		Prefix: "/ab",
+		Prefix: key.QueryStrKey("/ab"),
 		Orders: []Order{OrderByKey{}},
 	}
 	testNaiveQueryApply(t, q, sampleKeys, key.StrsToKeys([]string{
@@ -294,7 +294,7 @@ func TestStringer(t *testing.T) {
 		t.Fatalf("expected\n\t%s\ngot\n\t%s", expected, actual)
 	}
 
-	q.Prefix = "/foo"
+	q.Prefix = key.QueryStrKey("/foo")
 	expected = `SELECT keys,vals FROM "/foo" FILTER [KEY > "/foo/bar", KEY < "/foo/bar"] ORDER [VALUE, KEY] OFFSET 10 LIMIT 10`
 	actual = q.String()
 	if actual != expected {

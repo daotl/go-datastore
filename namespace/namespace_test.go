@@ -119,7 +119,7 @@ func (ks *DSSuite) TestQuery(c *C) {
 	err = qres.Close()
 	c.Check(err, Equals, nil)
 
-	qres, err = nsds.Query(dsq.Query{Prefix: "bar"})
+	qres, err = nsds.Query(dsq.Query{Prefix: key.QueryStrKey("/bar")})
 	c.Check(err, Equals, nil)
 
 	expect = []dsq.Entry{

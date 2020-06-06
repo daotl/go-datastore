@@ -129,7 +129,7 @@ func (d *Datastore) Query(q query.Query) (query.Results, error) {
 			if path[0] != '/' {
 				path = "/" + path
 			}
-			if path == q.Prefix {
+			if q.Prefix.KeyType() == key.KeyTypeString && path == q.Prefix.String() {
 				return nil
 			}
 			var result query.Result
@@ -144,8 +144,8 @@ func (d *Datastore) Query(q query.Query) (query.Results, error) {
 	}
 
 	go func() {
-		if q.Prefix != "" {
-			filepath.Walk(filepath.Join(d.path, q.Prefix), walkFn)
+		if q.Prefix.KeyType() == key.KeyTypeString && q.Prefix.String() != "" {
+			filepath.Walk(filepath.Join(d.path, q.Prefix.String()), walkFn)
 		} else {
 			filepath.Walk(d.path, walkFn)
 		}
@@ -153,7 +153,7 @@ func (d *Datastore) Query(q query.Query) (query.Results, error) {
 	}()
 	r := query.ResultsWithChan(q, results)
 	q1 := q
-	q1.Prefix = ""
+	q1.Prefix = nil
 	r = query.NaiveQueryApply(q1, r)
 	return r, nil
 }
