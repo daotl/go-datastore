@@ -209,7 +209,7 @@ func TestQuerySimple(t *testing.T) {
 		{Prefix: key.NewStrKey("/quux"), Datastore: mapds},
 	})
 
-	var myKey = key.NewStrKey("/quux/thud")
+	myKey := key.NewStrKey("/quux/thud")
 	if err := m.Put(myKey, []byte("foobar")); err != nil {
 		t.Fatalf("Put error: %v", err)
 	}
