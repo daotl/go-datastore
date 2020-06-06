@@ -2,7 +2,7 @@ package fuzzer
 
 import (
 	ds "github.com/bdware/go-datastore"
-	prov "github.com/ipfs/go-ds-flatfs"
+	prov "github.com/bdware/go-ds-flatfs"
 )
 
 func init() {
