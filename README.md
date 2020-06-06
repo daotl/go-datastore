@@ -42,7 +42,6 @@ go get github.com/bdware/go-datastore
 
 See [API documentation](https://pkg.go.dev/github.com/bdware/go-datastore).
 
-
 ## Contribute
 
 Feel free to join in. All welcome. Open an [issue](https://github.com/BDWare/go-datastore/issues)!
