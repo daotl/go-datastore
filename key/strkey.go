@@ -41,15 +41,15 @@ type StrKey struct {
 	string
 }
 
-// NewStrKey constructs a key from string. it will clean the value.
-func NewStrKey(s string) Key {
+// NewStrKey constructs a StrKey from string. it will clean the value.
+func NewStrKey(s string) StrKey {
 	k := StrKey{s}
 	k.Clean()
 	return k
 }
 
-// RawStrKey creates a new Key without safety checking the input. Use with care.
-func RawStrKey(s string) Key {
+// RawStrKey creates a new StrKey without safety checking the input. Use with care.
+func RawStrKey(s string) StrKey {
 	// accept an empty string and fix it to avoid special cases
 	// elsewhere
 	if len(s) == 0 {
@@ -66,8 +66,8 @@ func RawStrKey(s string) Key {
 	return StrKey{s}
 }
 
-// QueryStrKey creates a new Key without safety checking the input, intended to be used for query. Use with care.
-func QueryStrKey(s string) Key {
+// QueryStrKey creates a new StrKey without safety checking the input, intended to be used for query. Use with care.
+func QueryStrKey(s string) StrKey {
 	// accept an empty string and fix it to avoid special cases
 	// elsewhere
 	if len(s) == 0 {
@@ -85,17 +85,17 @@ func QueryStrKey(s string) Key {
 }
 
 // Deprecated: NewKey just proxy calls to NewStrKey for backward compatibility.
-func NewKey(s string) Key {
+func NewKey(s string) StrKey {
 	return NewStrKey(s)
 }
 
 // Deprecated: RawKey just proxy calls to RawStrKey for backward compatibility.
-func RawKey(s string) Key {
+func RawKey(s string) StrKey {
 	return RawStrKey(s)
 }
 
 // KeyWithNamespaces constructs a key out of a namespace slice.
-func KeyWithNamespaces(ns []string) Key {
+func KeyWithNamespaces(ns []string) StrKey {
 	return NewStrKey(strings.Join(ns, "/"))
 }
 
@@ -145,7 +145,7 @@ func (k StrKey) Less(k2 Key) bool {
 		panic(ErrNotStrKey)
 	}
 	list1 := k.List()
-	list2 := k2.List()
+	list2 := k2.(StrKey).List()
 	for i, c1 := range list1 {
 		if len(list2) < (i + 1) {
 			return false
@@ -223,14 +223,14 @@ func (k StrKey) Instance(s string) Key {
 //   NewStrKey("/Comedy/MontyPython/Actor:JohnCleese").Path()
 //   NewStrKey("/Comedy/MontyPython/Actor")
 func (k StrKey) Path() Key {
-	s := k.Parent().(StrKey).string + "/" + NamespaceType(k.BaseNamespace())
+	s := k.Parent().string + "/" + NamespaceType(k.BaseNamespace())
 	return NewStrKey(s)
 }
 
 // Parent returns the `parent` Key of this Key.
 //   NewStrKey("/Comedy/MontyPython/Actor:JohnCleese").Parent()
 //   NewStrKey("/Comedy/MontyPython")
-func (k StrKey) Parent() Key {
+func (k StrKey) Parent() StrKey {
 	n := k.List()
 	if len(n) == 1 {
 		return RawStrKey("/")
@@ -243,6 +243,11 @@ func (k StrKey) Parent() Key {
 //   NewStrKey("/Comedy/MontyPython/Actor:JohnCleese")
 // Panic if `k2` is not a StrKey.
 func (k StrKey) Child(k2 Key) Key {
+	return k.ChildStrKey(k2)
+}
+
+// ChildStrKey is the same as Child but returns a StrKey.
+func (k StrKey) ChildStrKey(k2 Key) StrKey {
 	if k2 == nil {
 		return k
 	}
@@ -252,7 +257,7 @@ func (k StrKey) Child(k2 Key) Key {
 	sk2 := k2.(StrKey)
 	switch {
 	case k.string == "/":
-		return k2
+		return sk2
 	case sk2.string == "/":
 		return k
 	default:
@@ -264,13 +269,12 @@ func (k StrKey) Child(k2 Key) Key {
 //   NewStrKey("/Comedy/MontyPython").ChildString("Actor:JohnCleese")
 //   NewStrKey("/Comedy/MontyPython/Actor:JohnCleese")
 func (k StrKey) ChildString(s string) Key {
-	return NewStrKey(k.string + "/" + s)
+	return k.ChildStringStrKey(s)
 }
 
-// ChildBytes returns the `child` Key of this Key -- bytes helper.
-// Not applicable for StrKey.
-func (k StrKey) ChildBytes(b []byte) Key {
-	panic(ErrUnimplemented)
+// ChildStringStrKey is the same as ChildString but returns a StrKey.
+func (k StrKey) ChildStringStrKey(s string) StrKey {
+	return NewStrKey(k.string + "/" + s)
 }
 
 // IsAncestorOf returns whether this key is a prefix of `other` (excluding equals).
@@ -357,7 +361,7 @@ func (k *StrKey) UnmarshalJSON(data []byte) error {
 	if err := json.Unmarshal(data, &key); err != nil {
 		return err
 	}
-	*k = NewStrKey(key).(StrKey)
+	*k = NewStrKey(key)
 	return nil
 }
 

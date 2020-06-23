@@ -20,14 +20,19 @@ type BytesKey struct {
 	bytes []byte
 }
 
-// NewBytesKey constructs a key from byte slice. it will clean the value.
-func NewBytesKey(b []byte) Key {
-	k := BytesKey{b}
+// NewBytesKey constructs a BytesKey from byte slice.
+func NewBytesKey(b []byte) BytesKey {
+	return BytesKey{b}
+}
+
+// NewBytesKeyFromString constructs a BytesKey from string.
+func NewBytesKeyFromString(s string) BytesKey {
+	k := BytesKey{[]byte(s)}
 	return k
 }
 
 // KeyWithNamespaces constructs a key out of a namespace slice.
-func BytesKeyWithNamespaces(ns [][]byte) Key {
+func BytesKeyWithNamespaces(ns [][]byte) BytesKey {
 	return BytesKey{bytes.Join(ns, nil)}
 }
 
@@ -67,60 +72,6 @@ func (k BytesKey) Less(k2 Key) bool {
 	return bytes.Compare(k.bytes, k2.(BytesKey).bytes) == -1
 }
 
-// List returns the `list` representation of this Key.
-// Not applicable for BytesKey.
-func (k BytesKey) List() []string {
-	panic(ErrUnimplemented)
-}
-
-// Reverse returns the reverse of this Key.
-// Not applicable for BytesKey.
-func (k BytesKey) Reverse() Key {
-	panic(ErrUnimplemented)
-}
-
-// Namespaces returns the `namespaces` making up this Key.
-// Not applicable for BytesKey.
-func (k BytesKey) Namespaces() []string {
-	panic(ErrUnimplemented)
-}
-
-// BaseNamespace returns the "base" namespace of this key (path.Base(filename))
-// Not applicable for BytesKey.
-func (k BytesKey) BaseNamespace() string {
-	panic(ErrUnimplemented)
-}
-
-// Type returns the "type" of this key (value of last namespace).
-// Not applicable for BytesKey.
-func (k BytesKey) Type() string {
-	panic(ErrUnimplemented)
-}
-
-// Name returns the "name" of this key (field of last namespace).
-// Not applicable for BytesKey.
-func (k BytesKey) Name() string {
-	panic(ErrUnimplemented)
-}
-
-// Instance returns an "instance" of this type key (appends value to namespace).
-// Not applicable for BytesKey.
-func (k BytesKey) Instance(s string) Key {
-	panic(ErrUnimplemented)
-}
-
-// Path returns the "path" of this key (parent + type).
-// Not applicable for BytesKey.
-func (k BytesKey) Path() Key {
-	panic(ErrUnimplemented)
-}
-
-// Parent returns the `parent` Key of this Key.
-// Not applicable for BytesKey.
-func (k BytesKey) Parent() Key {
-	panic(ErrUnimplemented)
-}
-
 // Child returns the `child` Key of this Key.
 //   NewBytesKey({{BYTES1}}).Child(NewBytesKey({{BYTES2}}))
 //   NewBytesKey({{BYTES1 || BYTES2}})
@@ -133,12 +84,6 @@ func (k BytesKey) Child(k2 Key) Key {
 		panic(ErrNotBytesKey)
 	}
 	return k.ChildBytes(k2.(BytesKey).bytes)
-}
-
-// ChildString returns the `child` Key of this Key -- string helper.
-// Not applicable for BytesKey.
-func (k BytesKey) ChildString(s string) Key {
-	panic(ErrUnimplemented)
 }
 
 // ChildBytes returns the `child` Key of this Key -- bytes helper.
@@ -178,12 +123,6 @@ func (k BytesKey) IsDescendantOf(other Key) bool {
 		panic(ErrNotBytesKey)
 	}
 	return other.(BytesKey).IsAncestorOf(k)
-}
-
-// IsTopLevel returns whether this key has only one namespace.
-// Not applicable for BytesKey.
-func (k BytesKey) IsTopLevel() bool {
-	panic(ErrUnimplemented)
 }
 
 // HasPrefix returns whether this key contains another as a prefix (including equals).
@@ -229,4 +168,12 @@ func (k *BytesKey) UnmarshalJSON(data []byte) (err error) {
 //   NewBytesKey([]byte("f98719ea086343f7b71f32ea9d9d521d"))
 func RandomBytesKey() Key {
 	return BytesKey{[]byte(strings.Replace(uuid.New().String(), "-", "", -1))}
+}
+
+func StrsToBytesKeys(strs []string) []Key {
+	keys := make([]Key, len(strs))
+	for i, s := range strs {
+		keys[i] = NewBytesKeyFromString(s)
+	}
+	return keys
 }

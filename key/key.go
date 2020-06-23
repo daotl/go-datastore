@@ -12,7 +12,6 @@ import (
 )
 
 var (
-	ErrUnimplemented       = errors.New("function not implemented")
 	ErrKeyTypeNotSupported = errors.New("key type not supported")
 )
 
@@ -55,58 +54,12 @@ type Key interface {
 	Equal(k2 Key) bool
 	// Less checks whether this key is sorted lower than another.
 	Less(k2 Key) bool
-	// List returns the `list` representation of this Key.
-	//   NewStrKey("/Comedy/MontyPython/Actor:JohnCleese").List()
-	//   ["Comedy", "MontyPythong", "Actor:JohnCleese"]
-	List() []string
-	// Reverse returns the reverse of this Key.
-	//   NewStrKey("/Comedy/MontyPython/Actor:JohnCleese").Reverse()
-	//   NewStrKey("/Actor:JohnCleese/MontyPython/Comedy")
-	Reverse() Key
-	// Namespaces returns the `namespaces` making up this Key.
-	//   NewStrKey("/Comedy/MontyPython/Actor:JohnCleese").Namespaces()
-	//   ["Comedy", "MontyPython", "Actor:JohnCleese"]
-	Namespaces() []string
-	// BaseNamespace returns the "base" namespace of this key (path.Base(filename))
-	//   NewStrKey("/Comedy/MontyPython/Actor:JohnCleese").BaseNamespace()
-	//   "Actor:JohnCleese"
-	BaseNamespace() string
-	// Type returns the "type" of this key (value of last namespace).
-	//   NewStrKey("/Comedy/MontyPython/Actor:JohnCleese").Type()
-	//   "Actor"
-	Type() string
-	// Name returns the "name" of this key (field of last namespace).
-	//   NewStrKey("/Comedy/MontyPython/Actor:JohnCleese").Name()
-	//   "JohnCleese"
-	Name() string
-	// Instance returns an "instance" of this type key (appends value to namespace).
-	//   NewStrKey("/Comedy/MontyPython/Actor").Instance("JohnClesse")
-	//   NewStrKey("/Comedy/MontyPython/Actor:JohnCleese")
-	Instance(s string) Key
-	// Path returns the "path" of this key (parent + type).
-	//   NewStrKey("/Comedy/MontyPython/Actor:JohnCleese").Path()
-	//   NewStrKey("/Comedy/MontyPython/Actor")
-	Path() Key
-	// Parent returns the `parent` Key of this Key.
-	//   NewStrKey("/Comedy/MontyPython/Actor:JohnCleese").Parent()
-	//   NewStrKey("/Comedy/MontyPython")
-	Parent() Key
 	// Child returns the `child` Key of this Key.
 	Child(k2 Key) Key
-	// ChildString returns the `child` Key of this Key -- string helper.
-	//   NewStrKey("/Comedy/MontyPython").ChildString("Actor:JohnCleese")
-	//   NewStrKey("/Comedy/MontyPython/Actor:JohnCleese")
-	ChildString(s string) Key
-	// ChildBytes returns the `child` Key of this Key -- bytes helper.
-	//   NewBytesKey({{BYTES1}}).Child({{BYTES2}}))
-	//   NewBytesKey({{BYTES1 || BYTES2}})
-	ChildBytes(b []byte) Key
 	// IsAncestorOf returns whether this key is a prefix of `other`
 	IsAncestorOf(other Key) bool
 	// IsDescendantOf returns whether this key contains another as a prefix (excluding equals).
 	IsDescendantOf(other Key) bool
-	// IsTopLevel returns whether this key has only one namespace.
-	IsTopLevel() bool
 	// HasPrefix returns whether this key contains another as a prefix (including equals).
 	HasPrefix(other Key) bool
 	// HasPrefix returns whether this key contains another as a suffix (including equals).

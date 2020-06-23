@@ -21,7 +21,7 @@ import (
 )
 
 // Hook up gocheck into the "go test" runner.
-func Test(t *testing.T) { TestingT(t) }
+func TestStrKey(t *testing.T) { TestingT(t) }
 
 type DSSuite struct{}
 
@@ -33,7 +33,7 @@ var pair = &kt.Pair{
 	},
 	Invert: func(k key.Key) key.Key {
 		// remove abc prefix
-		l := k.List()
+		l := k.(key.StrKey).List()
 		if l[0] != "abc" {
 			panic("key does not have prefix. convert failed?")
 		}
@@ -41,7 +41,7 @@ var pair = &kt.Pair{
 	},
 }
 
-func (ks *DSSuite) TestBasic(c *C) {
+func (ks *DSSuite) TestStrKeyBasic(c *C) {
 	mpds := dstest.NewTestDatastore(true)
 	ktds := kt.Wrap(mpds, pair)
 
@@ -109,13 +109,13 @@ func (ks *DSSuite) TestBasic(c *C) {
 	}
 }
 
-func TestSuiteDefaultPair(t *testing.T) {
+func TestSuiteStrKeyDefaultPair(t *testing.T) {
 	mpds := dstest.NewTestDatastore(true)
 	ktds := kt.Wrap(mpds, pair)
 	dstest.SubtestAll(t, ktds)
 }
 
-func TestSuitePrefixTransform(t *testing.T) {
+func TestSuiteStrKeyPrefixTransform(t *testing.T) {
 	mpds := dstest.NewTestDatastore(true)
 	ktds := kt.Wrap(mpds, kt.PrefixTransform{Prefix: key.NewStrKey("/foo")})
 	dstest.SubtestAll(t, ktds)

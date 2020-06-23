@@ -24,7 +24,7 @@ type StrKeySuite struct{}
 
 var _ = Suite(&StrKeySuite{})
 
-func (ks *StrKeySuite) SubtestKey(s string, c *C) {
+func (ks *StrKeySuite) SubtestStrKey(s string, c *C) {
 	fixed := path.Clean("/" + s)
 	namespaces := strings.Split(fixed, "/")[1:]
 	lastNamespace := namespaces[len(namespaces)-1]
@@ -51,9 +51,9 @@ func (ks *StrKeySuite) SubtestKey(s string, c *C) {
 	c.Check(NewStrKey(s).Instance("inst").String(), Equals, kinstance)
 
 	c.Check(NewStrKey(s).Child(NewStrKey("cchildd")).String(), Equals, kchild)
-	c.Check(NewStrKey(s).Child(NewStrKey("cchildd")).Parent().String(), Equals, fixed)
+	c.Check(NewStrKey(s).ChildStrKey(NewStrKey("cchildd")).Parent().String(), Equals, fixed)
 	c.Check(NewStrKey(s).ChildString("cchildd").String(), Equals, kchild)
-	c.Check(NewStrKey(s).ChildString("cchildd").Parent().String(), Equals, fixed)
+	c.Check(NewStrKey(s).ChildStringStrKey("cchildd").Parent().String(), Equals, fixed)
 	c.Check(NewStrKey(s).Parent().String(), Equals, kparent)
 	c.Check(len(NewStrKey(s).List()), Equals, len(namespaces))
 	c.Check(len(NewStrKey(s).Namespaces()), Equals, len(namespaces))
@@ -70,25 +70,25 @@ func (ks *StrKeySuite) SubtestKey(s string, c *C) {
 	c.Check(NewStrKey(s).Less(NewStrKey(s).ChildString("foo")), Equals, true)
 }
 
-func (ks *StrKeySuite) TestKeyBasic(c *C) {
-	ks.SubtestKey("", c)
-	ks.SubtestKey("abcde", c)
-	ks.SubtestKey("disahfidsalfhduisaufidsail", c)
-	ks.SubtestKey("/fdisahfodisa/fdsa/fdsafdsafdsafdsa/fdsafdsa/", c)
-	ks.SubtestKey("4215432143214321432143214321", c)
-	ks.SubtestKey("/fdisaha////fdsa////fdsafdsafdsafdsa/fdsafdsa/", c)
-	ks.SubtestKey("abcde:fdsfd", c)
-	ks.SubtestKey("disahfidsalfhduisaufidsail:fdsa", c)
-	ks.SubtestKey("/fdisahfodisa/fdsa/fdsafdsafdsafdsa/fdsafdsa/:", c)
-	ks.SubtestKey("4215432143214321432143214321:", c)
-	ks.SubtestKey("fdisaha////fdsa////fdsafdsafdsafdsa/fdsafdsa/f:fdaf", c)
+func (ks *StrKeySuite) TestStrKeyBasic(c *C) {
+	ks.SubtestStrKey("", c)
+	ks.SubtestStrKey("abcde", c)
+	ks.SubtestStrKey("disahfidsalfhduisaufidsail", c)
+	ks.SubtestStrKey("/fdisahfodisa/fdsa/fdsafdsafdsafdsa/fdsafdsa/", c)
+	ks.SubtestStrKey("4215432143214321432143214321", c)
+	ks.SubtestStrKey("/fdisaha////fdsa////fdsafdsafdsafdsa/fdsafdsa/", c)
+	ks.SubtestStrKey("abcde:fdsfd", c)
+	ks.SubtestStrKey("disahfidsalfhduisaufidsail:fdsa", c)
+	ks.SubtestStrKey("/fdisahfodisa/fdsa/fdsafdsafdsafdsa/fdsafdsa/:", c)
+	ks.SubtestStrKey("4215432143214321432143214321:", c)
+	ks.SubtestStrKey("fdisaha////fdsa////fdsafdsafdsafdsa/fdsafdsa/f:fdaf", c)
 }
 
 func CheckTrue(c *C, cond bool) {
 	c.Check(cond, Equals, true)
 }
 
-func (ks *StrKeySuite) TestKeyAncestry(c *C) {
+func (ks *StrKeySuite) TestStrKeyAncestry(c *C) {
 	k1 := NewStrKey("/A/B/C")
 	k2 := NewStrKey("/A/B/C/D")
 	k3 := NewStrKey("/AB")
@@ -116,7 +116,7 @@ func (ks *StrKeySuite) TestKeyAncestry(c *C) {
 	c.Check(k1.Path().String(), Equals, k2.Parent().Path().String())
 }
 
-func (ks *StrKeySuite) TestType(c *C) {
+func (ks *StrKeySuite) TestStrKeyType(c *C) {
 	k1 := NewStrKey("/A/B/C:c")
 	k2 := NewStrKey("/A/B/C:c/D:d")
 
@@ -127,7 +127,7 @@ func (ks *StrKeySuite) TestType(c *C) {
 	c.Check(k1.Type(), Equals, k2.Parent().Type())
 }
 
-func (ks *StrKeySuite) TestRandom(c *C) {
+func (ks *StrKeySuite) TestStrKeyRandom(c *C) {
 	keys := map[Key]bool{}
 	for i := 0; i < 1000; i++ {
 		r := RandomStrKey()
@@ -138,7 +138,7 @@ func (ks *StrKeySuite) TestRandom(c *C) {
 	CheckTrue(c, len(keys) == 1000)
 }
 
-func (ks *StrKeySuite) TestLess(c *C) {
+func (ks *StrKeySuite) TestStrKeyLess(c *C) {
 
 	checkLess := func(a, b string) {
 		ak := NewStrKey(a)
@@ -176,7 +176,7 @@ func TestStrKeyMarshalJSON(t *testing.T) {
 		}
 
 		if c.err == "" {
-			key := NewStrKey("").(StrKey)
+			key := NewStrKey("")
 			if err := key.UnmarshalJSON(out); err != nil {
 				t.Errorf("case %d error parsing key from json output: %s", i, err.Error())
 			}
@@ -200,7 +200,7 @@ func TestStrKeyUnmarshalJSON(t *testing.T) {
 	}
 
 	for i, c := range cases {
-		key := NewStrKey("").(StrKey)
+		key := NewStrKey("")
 		err := key.UnmarshalJSON(c.data)
 		if !(err == nil && c.err == "" || err != nil && err.Error() == c.err) {
 			t.Errorf("case %d marshal error mismatch: expected: %s, got: %s", i, c.err, err)
