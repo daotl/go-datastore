@@ -101,7 +101,7 @@ type FilterKeyPrefix struct {
 }
 
 func (f FilterKeyPrefix) Filter(e Entry) bool {
-	return e.Key.HasPrefix(f.Prefix)
+	return e.Key.HasPrefix(f.Prefix) && !e.Key.Equal(f.Prefix)
 }
 
 func (f FilterKeyPrefix) String() string {
