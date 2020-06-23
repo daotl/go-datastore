@@ -325,27 +325,53 @@ func (k StrKey) IsTopLevel() bool {
 }
 
 // HasPrefix returns whether this key contains another as a prefix (including equals).
-// Panic if `other` is not a StrKey.
-func (k StrKey) HasPrefix(other Key) bool {
-	if other == nil {
+// Panic if `prefix` is not a StrKey.
+func (k StrKey) HasPrefix(prefix Key) bool {
+	if prefix == nil {
 		return true
 	}
-	if other.KeyType() != KeyTypeString {
+	if prefix.KeyType() != KeyTypeString {
 		panic(ErrNotStrKey)
 	}
-	return strings.HasPrefix(k.string, other.(StrKey).string)
+	return strings.HasPrefix(k.string, prefix.(StrKey).string)
 }
 
 // HasPrefix returns whether this key contains another as a suffix (including equals).
-// Panic if `other` is not a StrKey.
-func (k StrKey) HasSuffix(other Key) bool {
-	if other == nil {
+// Panic if `suffix` is not a StrKey.
+func (k StrKey) HasSuffix(suffix Key) bool {
+	if suffix == nil {
 		return true
 	}
-	if other.KeyType() != KeyTypeString {
+	if suffix.KeyType() != KeyTypeString {
 		panic(ErrNotStrKey)
 	}
-	return strings.HasSuffix(k.string, other.(StrKey).string)
+	return strings.HasSuffix(k.string, suffix.(StrKey).string)
+}
+
+// TrimPrefix returns a new key equals to this key without the provided leading prefix key.
+// If s doesn't start with prefix, this key is returned unchanged.
+// Panic if `prefix` is not a StrKey.
+func (k StrKey) TrimPrefix(prefix Key) Key {
+	if prefix == nil {
+		return k
+	}
+	if prefix.KeyType() != KeyTypeString {
+		panic(ErrNotStrKey)
+	}
+	return NewStrKey(strings.TrimPrefix(k.string, prefix.(StrKey).string))
+}
+
+// TrimSuffix returns a new key equals to this key without the provided trailing suffix key.
+// If s doesn't end with suffix, this key is returned unchanged.
+// Panic if `suffix` is not a StrKey.
+func (k StrKey) TrimSuffix(suffix Key) Key {
+	if suffix == nil {
+		return k
+	}
+	if suffix.KeyType() != KeyTypeString {
+		panic(ErrNotStrKey)
+	}
+	return NewStrKey(strings.TrimSuffix(k.string, suffix.(StrKey).string))
 }
 
 // MarshalJSON implements the json.Marshaler interface,

@@ -61,9 +61,15 @@ type Key interface {
 	// IsDescendantOf returns whether this key contains another as a prefix (excluding equals).
 	IsDescendantOf(other Key) bool
 	// HasPrefix returns whether this key contains another as a prefix (including equals).
-	HasPrefix(other Key) bool
+	HasPrefix(prefix Key) bool
 	// HasPrefix returns whether this key contains another as a suffix (including equals).
-	HasSuffix(other Key) bool
+	HasSuffix(suffix Key) bool
+	// TrimPrefix returns a new key equals to this key without the provided leading prefix key.
+	// If s doesn't start with prefix, this key is returned unchanged.
+	TrimPrefix(prefix Key) Key
+	// TrimSuffix returns a new key equals to this key without the provided trailing suffix key.
+	// If s doesn't end with suffix, this key is returned unchanged.
+	TrimSuffix(suffix Key) Key
 	// MarshalJSON implements the json.Marshaler interface,
 	// keys are represented as JSON strings
 	MarshalJSON() ([]byte, error)

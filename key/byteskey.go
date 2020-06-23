@@ -126,27 +126,53 @@ func (k BytesKey) IsDescendantOf(other Key) bool {
 }
 
 // HasPrefix returns whether this key contains another as a prefix (including equals).
-// Panic if `other` is not a BytesKey.
-func (k BytesKey) HasPrefix(other Key) bool {
-	if other == nil {
+// Panic if `prefix` is not a BytesKey.
+func (k BytesKey) HasPrefix(prefix Key) bool {
+	if prefix == nil {
 		return true
 	}
-	if other.KeyType() != KeyTypeBytes {
+	if prefix.KeyType() != KeyTypeBytes {
 		panic(ErrNotBytesKey)
 	}
-	return bytes.HasPrefix(k.bytes, other.(BytesKey).bytes)
+	return bytes.HasPrefix(k.bytes, prefix.(BytesKey).bytes)
 }
 
 // HasPrefix returns whether this key contains another as a suffix (including equals).
-// Panic if `other` is not a BytesKey.
-func (k BytesKey) HasSuffix(other Key) bool {
-	if other == nil {
+// Panic if `suffix` is not a BytesKey.
+func (k BytesKey) HasSuffix(suffix Key) bool {
+	if suffix == nil {
 		return true
 	}
-	if other.KeyType() != KeyTypeBytes {
+	if suffix.KeyType() != KeyTypeBytes {
 		panic(ErrNotBytesKey)
 	}
-	return bytes.HasSuffix(k.bytes, other.(BytesKey).bytes)
+	return bytes.HasSuffix(k.bytes, suffix.(BytesKey).bytes)
+}
+
+// TrimPrefix returns a new key equals to this key without the provided leading prefix key.
+// If s doesn't start with prefix, this key is returned unchanged.
+// Panic if `prefix` is not a BytesKey.
+func (k BytesKey) TrimPrefix(prefix Key) Key {
+	if prefix == nil {
+		return k
+	}
+	if prefix.KeyType() != KeyTypeBytes {
+		panic(ErrNotBytesKey)
+	}
+	return NewBytesKey(bytes.TrimPrefix(k.bytes, prefix.(BytesKey).bytes))
+}
+
+// TrimSuffix returns a new key equals to this key without the provided trailing suffix key.
+// If s doesn't end with suffix, this key is returned unchanged.
+// Panic if `suffix` is not a BytesKey.
+func (k BytesKey) TrimSuffix(suffix Key) Key {
+	if suffix == nil {
+		return k
+	}
+	if suffix.KeyType() != KeyTypeBytes {
+		panic(ErrNotBytesKey)
+	}
+	return NewBytesKey(bytes.TrimSuffix(k.bytes, suffix.(BytesKey).bytes))
 }
 
 // MarshalJSON implements the json.Marshaler interface,
