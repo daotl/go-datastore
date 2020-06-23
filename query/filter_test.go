@@ -41,8 +41,9 @@ func testKeyFilter(t *testing.T, f Filter, keys []key.Key, expect key.KeySlice) 
 
 func TestFilterKeyCompare(t *testing.T) {
 
-	testKeyFilter(t, FilterKeyCompare{Equal, key.QueryStrKey("/ab")}, sampleKeys, key.StrsToKeys([]string{"/ab"}))
-	testKeyFilter(t, FilterKeyCompare{GreaterThan, key.QueryStrKey("/ab")}, sampleKeys, key.StrsToKeys([]string{
+	// StrKey
+	testKeyFilter(t, FilterKeyCompare{Equal, key.QueryStrKey("/ab")}, sampleStrKeys, key.StrsToKeys([]string{"/ab"}))
+	testKeyFilter(t, FilterKeyCompare{GreaterThan, key.QueryStrKey("/ab")}, sampleStrKeys, key.StrsToKeys([]string{
 		"/ab/c",
 		"/ab/cd",
 		"/ab/ef",
@@ -50,28 +51,62 @@ func TestFilterKeyCompare(t *testing.T) {
 		"/abce",
 		"/abcf",
 	}))
-	testKeyFilter(t, FilterKeyCompare{LessThanOrEqual, key.QueryStrKey("/ab")}, sampleKeys, key.StrsToKeys([]string{
+	testKeyFilter(t, FilterKeyCompare{LessThanOrEqual, key.QueryStrKey("/ab")}, sampleStrKeys, key.StrsToKeys([]string{
 		"/a",
 		"/ab",
+	}))
+
+	// BytesKey
+	testKeyFilter(t, FilterKeyCompare{Equal, key.NewBytesKeyFromString("ab")}, sampleBytesKeys, key.StrsToBytesKeys([]string{"ab"}))
+	testKeyFilter(t, FilterKeyCompare{GreaterThan, key.NewBytesKeyFromString("ab")}, sampleBytesKeys, key.StrsToBytesKeys([]string{
+		"abc",
+		"abcd",
+		"abef",
+		"abfg",
+		"abce",
+		"abcf",
+	}))
+	testKeyFilter(t, FilterKeyCompare{LessThanOrEqual, key.NewBytesKeyFromString("ab")}, sampleBytesKeys, key.StrsToBytesKeys([]string{
+		"a",
+		"ab",
 	}))
 }
 
 func TestFilterKeyPrefix(t *testing.T) {
 
-	testKeyFilter(t, FilterKeyPrefix{key.QueryStrKey("/a")}, sampleKeys, key.StrsToKeys([]string{
+	// StrKey
+	testKeyFilter(t, FilterKeyPrefix{key.QueryStrKey("/a")}, sampleStrKeys, key.StrsToKeys([]string{
 		"/ab/c",
 		"/ab/cd",
 		"/ab/ef",
 		"/ab/fg",
-		"/a",
 		"/abce",
 		"/abcf",
 		"/ab",
 	}))
-	testKeyFilter(t, FilterKeyPrefix{key.QueryStrKey("/ab/")}, sampleKeys, key.StrsToKeys([]string{
+	testKeyFilter(t, FilterKeyPrefix{key.QueryStrKey("/ab/")}, sampleStrKeys, key.StrsToKeys([]string{
 		"/ab/c",
 		"/ab/cd",
 		"/ab/ef",
 		"/ab/fg",
+	}))
+
+	// BytesKey
+	testKeyFilter(t, FilterKeyPrefix{key.NewBytesKeyFromString("a")}, sampleBytesKeys, key.StrsToBytesKeys([]string{
+		"abc",
+		"abcd",
+		"abef",
+		"abfg",
+		"abce",
+		"abcf",
+		"ab",
+	}))
+	testKeyFilter(t, FilterKeyPrefix{key.NewBytesKeyFromString("ab")}, sampleBytesKeys, key.StrsToBytesKeys([]string{
+		"abc",
+		"abcd",
+		"abef",
+		"abfg",
+		"abce",
+		"abcf",
 	}))
 }

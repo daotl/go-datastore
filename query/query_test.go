@@ -13,7 +13,7 @@ import (
 	key "github.com/bdware/go-datastore/key"
 )
 
-var sampleKeys = key.StrsToKeys([]string{
+var sampleStrKeys = key.StrsToKeys([]string{
 	"/ab/c",
 	"/ab/cd",
 	"/ab/ef",
@@ -22,6 +22,17 @@ var sampleKeys = key.StrsToKeys([]string{
 	"/abce",
 	"/abcf",
 	"/ab",
+})
+
+var sampleBytesKeys = key.StrsToBytesKeys([]string{
+	"abc",
+	"abcd",
+	"abef",
+	"abfg",
+	"a",
+	"abce",
+	"abcf",
+	"ab",
 })
 
 func testResults(t *testing.T, res Results, expect key.KeySlice) {
@@ -61,34 +72,55 @@ func TestNaiveQueryApply(t *testing.T) {
 	}
 
 	q := Query{Limit: 2}
-
-	testNaiveQueryApply(t, q, sampleKeys, key.StrsToKeys([]string{
+	testNaiveQueryApply(t, q, sampleStrKeys, key.StrsToKeys([]string{
 		"/ab/c",
 		"/ab/cd",
 	}))
+	testNaiveQueryApply(t, q, sampleBytesKeys, key.StrsToBytesKeys([]string{
+		"abc",
+		"abcd",
+	}))
 
 	q = Query{Offset: 3, Limit: 2}
-	testNaiveQueryApply(t, q, sampleKeys, key.StrsToKeys([]string{
+	testNaiveQueryApply(t, q, sampleStrKeys, key.StrsToKeys([]string{
 		"/ab/fg",
 		"/a",
+	}))
+	testNaiveQueryApply(t, q, sampleBytesKeys, key.StrsToBytesKeys([]string{
+		"abfg",
+		"a",
 	}))
 
 	f := &FilterKeyCompare{Op: Equal, Key: key.QueryStrKey("/ab")}
 	q = Query{Filters: []Filter{f}}
-	testNaiveQueryApply(t, q, sampleKeys, key.StrsToKeys([]string{
+	testNaiveQueryApply(t, q, sampleStrKeys, key.StrsToKeys([]string{
 		"/ab",
+	}))
+	f = &FilterKeyCompare{Op: Equal, Key: key.NewBytesKeyFromString("ab")}
+	q = Query{Filters: []Filter{f}}
+	testNaiveQueryApply(t, q, sampleBytesKeys, key.StrsToBytesKeys([]string{
+		"ab",
 	}))
 
 	q = Query{Prefix: key.QueryStrKey("/ab")}
-	testNaiveQueryApply(t, q, sampleKeys, key.StrsToKeys([]string{
+	testNaiveQueryApply(t, q, sampleStrKeys, key.StrsToKeys([]string{
 		"/ab/c",
 		"/ab/cd",
 		"/ab/ef",
 		"/ab/fg",
 	}))
+	q = Query{Prefix: key.NewBytesKeyFromString("ab")}
+	testNaiveQueryApply(t, q, sampleBytesKeys, key.StrsToBytesKeys([]string{
+		"abc",
+		"abcd",
+		"abef",
+		"abfg",
+		"abce",
+		"abcf",
+	}))
 
 	q = Query{Orders: []Order{OrderByKeyDescending{}}}
-	testNaiveQueryApply(t, q, sampleKeys, key.StrsToKeys([]string{
+	testNaiveQueryApply(t, q, sampleStrKeys, key.StrsToKeys([]string{
 		"/abcf",
 		"/abce",
 		"/ab/fg",
@@ -98,6 +130,16 @@ func TestNaiveQueryApply(t *testing.T) {
 		"/ab",
 		"/a",
 	}))
+	testNaiveQueryApply(t, q, sampleBytesKeys, key.StrsToBytesKeys([]string{
+		"abfg",
+		"abef",
+		"abcf",
+		"abce",
+		"abcd",
+		"abc",
+		"ab",
+		"a",
+	}))
 
 	q = Query{
 		Limit:  2,
@@ -105,9 +147,19 @@ func TestNaiveQueryApply(t *testing.T) {
 		Prefix: key.QueryStrKey("/ab"),
 		Orders: []Order{OrderByKey{}},
 	}
-	testNaiveQueryApply(t, q, sampleKeys, key.StrsToKeys([]string{
+	testNaiveQueryApply(t, q, sampleStrKeys, key.StrsToKeys([]string{
 		"/ab/cd",
 		"/ab/ef",
+	}))
+	q = Query{
+		Limit:  2,
+		Offset: 1,
+		Prefix: key.NewBytesKeyFromString("ab"),
+		Orders: []Order{OrderByKey{}},
+	}
+	testNaiveQueryApply(t, q, sampleBytesKeys, key.StrsToBytesKeys([]string{
+		"abcd",
+		"abce",
 	}))
 }
 
@@ -124,7 +176,7 @@ func TestLimit(t *testing.T) {
 		testResults(t, res, expect)
 	}
 
-	testKeyLimit(t, 0, sampleKeys, key.StrsToKeys([]string{ // none
+	testKeyLimit(t, 0, sampleStrKeys, key.StrsToKeys([]string{ // none
 		"/ab/c",
 		"/ab/cd",
 		"/ab/ef",
@@ -134,8 +186,18 @@ func TestLimit(t *testing.T) {
 		"/abcf",
 		"/ab",
 	}))
+	testKeyLimit(t, 0, sampleBytesKeys, key.StrsToBytesKeys([]string{ // none
+		"abc",
+		"abcd",
+		"abef",
+		"abfg",
+		"a",
+		"abce",
+		"abcf",
+		"ab",
+	}))
 
-	testKeyLimit(t, 10, sampleKeys, key.StrsToKeys([]string{ // large
+	testKeyLimit(t, 10, sampleStrKeys, key.StrsToKeys([]string{ // large
 		"/ab/c",
 		"/ab/cd",
 		"/ab/ef",
@@ -145,10 +207,24 @@ func TestLimit(t *testing.T) {
 		"/abcf",
 		"/ab",
 	}))
+	testKeyLimit(t, 10, sampleBytesKeys, key.StrsToBytesKeys([]string{ // large
+		"abc",
+		"abcd",
+		"abef",
+		"abfg",
+		"a",
+		"abce",
+		"abcf",
+		"ab",
+	}))
 
-	testKeyLimit(t, 2, sampleKeys, key.StrsToKeys([]string{
+	testKeyLimit(t, 2, sampleStrKeys, key.StrsToKeys([]string{
 		"/ab/c",
 		"/ab/cd",
+	}))
+	testKeyLimit(t, 2, sampleBytesKeys, key.StrsToBytesKeys([]string{
+		"abc",
+		"abcd",
 	}))
 }
 
@@ -166,7 +242,7 @@ func TestOffset(t *testing.T) {
 		testResults(t, res, expect)
 	}
 
-	testOffset(t, 0, sampleKeys, key.StrsToKeys([]string{ // none
+	testOffset(t, 0, sampleStrKeys, key.StrsToKeys([]string{ // none
 		"/ab/c",
 		"/ab/cd",
 		"/ab/ef",
@@ -176,17 +252,37 @@ func TestOffset(t *testing.T) {
 		"/abcf",
 		"/ab",
 	}))
-
-	testOffset(t, 10, sampleKeys, key.StrsToKeys([]string{ // large
+	testOffset(t, 0, sampleBytesKeys, key.StrsToBytesKeys([]string{ // none
+		"abc",
+		"abcd",
+		"abef",
+		"abfg",
+		"a",
+		"abce",
+		"abcf",
+		"ab",
 	}))
 
-	testOffset(t, 2, sampleKeys, key.StrsToKeys([]string{
+	testOffset(t, 10, sampleStrKeys, key.StrsToKeys([]string{ // large
+	}))
+	testOffset(t, 10, sampleBytesKeys, key.StrsToBytesKeys([]string{ // large
+	}))
+
+	testOffset(t, 2, sampleStrKeys, key.StrsToKeys([]string{
 		"/ab/ef",
 		"/ab/fg",
 		"/a",
 		"/abce",
 		"/abcf",
 		"/ab",
+	}))
+	testOffset(t, 2, sampleBytesKeys, key.StrsToBytesKeys([]string{
+		"abef",
+		"abfg",
+		"a",
+		"abce",
+		"abcf",
+		"ab",
 	}))
 }
 
@@ -211,17 +307,17 @@ func testResultsFromIterator(t *testing.T, getKeys func(rs Results) []key.Key, c
 	i := 0
 	results := ResultsFromIterator(Query{}, Iterator{
 		Next: func() (Result, bool) {
-			if i >= len(sampleKeys) {
+			if i >= len(sampleStrKeys) {
 				return Result{}, false
 			}
-			res := Result{Entry: Entry{Key: sampleKeys[i]}}
+			res := Result{Entry: Entry{Key: sampleStrKeys[i]}}
 			i++
 			return res, true
 		},
 		Close: close,
 	})
 	keys := getKeys(results)
-	if !reflect.DeepEqual(sampleKeys, keys) {
+	if !reflect.DeepEqual(sampleStrKeys, keys) {
 		t.Errorf("did not get the same set of keys")
 	}
 }
