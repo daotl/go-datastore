@@ -232,6 +232,7 @@ func (d *LogDatastore) DiskUsage() (uint64, error) {
 func (d *LogDatastore) Query(q dsq.Query) (dsq.Results, error) {
 	log.Printf("%s: Query\n", d.Name)
 	log.Printf("%s: q.Prefix: %s\n", d.Name, q.Prefix)
+	log.Printf("%s: q.Range: [%s, %s)\n", d.Name, q.Range.Start, q.Range.End)
 	log.Printf("%s: q.KeysOnly: %v\n", d.Name, q.KeysOnly)
 	log.Printf("%s: q.Filters: %d\n", d.Name, len(q.Filters))
 	log.Printf("%s: q.Orders: %d\n", d.Name, len(q.Orders))

@@ -107,3 +107,19 @@ func (f FilterKeyPrefix) Filter(e Entry) bool {
 func (f FilterKeyPrefix) String() string {
 	return fmt.Sprintf("PREFIX(%q)", f.Prefix)
 }
+
+type FilterKeyRange struct {
+	Range Range
+}
+
+func (f FilterKeyRange) Filter(e Entry) bool {
+	if f.Range.Start != nil && e.Key.Less(f.Range.Start) ||
+		f.Range.End != nil && (f.Range.End.Less(e.Key) || f.Range.End.Equal(e.Key)) {
+		return false
+	}
+	return true
+}
+
+func (f FilterKeyRange) String() string {
+	return fmt.Sprintf("RANGE[%q, %q)", f.Range.Start, f.Range.End)
+}

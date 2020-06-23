@@ -188,15 +188,17 @@ func (h *querySet) next() (query.Result, bool) {
 }
 
 // lookupAll returns all mounts that might contain keys that are strict
-// descendants of <key>. It will not return mounts that match key exactly.
+// descendants of <key> and contain keys that are in range of `r`.
+// It will not return mounts that match key exactly.
 //
-// Specifically, this function will return three slices:
+// Specifically, this function will return four slices:
 //
 // * The matching datastores.
 // * The prefixes where each matching datastore has been mounted.
-// * The prefix within these datastores at which descendants of the passed key
+// * The prefix within these datastores at which descendants of the passed prefix
 //   live. If the mounted datastore is fully contained within the given key,
 //   this will be /.
+// * The range within these datastores in which keys in the passed range live.
 //
 // By example, given the datastores:
 //
@@ -213,26 +215,48 @@ func (h *querySet) next() (query.Result, bool) {
 // * /foo/bar  -> ([/foo/bar], [/])                         # /foo/bar
 // * /bar/foo  -> ([/bar], [/foo])                          # the datastore mounted at /bar, rest is /foo
 // * /ba       -> ([/], [/])                                # the root; only full components are matched.
-func (d *Datastore) lookupAll(k key.Key) (dst []ds.Datastore, mountpoint, rest []key.Key) {
+func (d *Datastore) lookupAll(prefix key.Key, r query.Range) (
+	dst []ds.Datastore, mountpoint, restPrefixes []key.Key, restRanges []query.Range) {
+
 	for _, m := range d.mounts {
-		if m.Prefix.IsDescendantOf(k) {
-			dst = append(dst, m.Datastore)
-			mountpoint = append(mountpoint, m.Prefix)
-			rest = append(rest, key.NewStrKey("/"))
-		} else if m.Prefix.Equal(k) || m.Prefix.IsAncestorOf(k) {
-			r := strings.TrimPrefix(k.String(), m.Prefix.String())
+		isDescendantOfPrefix := m.Prefix.IsDescendantOf(prefix)
+		isEuqalOrAncestorOfPrefix := m.Prefix.Equal(prefix) || m.Prefix.IsAncestorOf(prefix)
+		isEuqalOrLargerThanRangeStart := r.Start == nil || r.Start.Less(m.Prefix) || r.Start.Equal(m.Prefix)
+		isPrefixOfRangeStart := r.Start != nil && r.Start.HasPrefix(m.Prefix) && !r.Start.Equal(m.Prefix)
+		isLessThanRangeEnd := r.End == nil || m.Prefix.Less(r.End)
+		isPrefixOfRangeEnd := r.End != nil && r.End.HasPrefix(m.Prefix) && !r.End.Equal(m.Prefix)
+
+		if (isDescendantOfPrefix || isEuqalOrAncestorOfPrefix) &&
+			(isEuqalOrLargerThanRangeStart || isPrefixOfRangeStart) && isLessThanRangeEnd {
 
 			dst = append(dst, m.Datastore)
 			mountpoint = append(mountpoint, m.Prefix)
-			rest = append(rest, key.NewStrKey(r))
 
-			// We've found an ancestor (or equal) key. We might have
-			// more general datastores, but they won't contain keys
-			// with this prefix so there's no point in searching them.
-			break
+			// Handle rest range first because we may break later
+			rr := query.Range{}
+			if isPrefixOfRangeStart {
+				rr.Start = r.Start.TrimPrefix(m.Prefix)
+			}
+			if isPrefixOfRangeEnd {
+				rr.End = r.End.TrimPrefix(m.Prefix)
+			}
+			restRanges = append(restRanges, rr)
+
+			// Handle rest prefix
+			if isDescendantOfPrefix {
+				restPrefixes = append(restPrefixes, key.NewStrKey("/"))
+			} else if isEuqalOrAncestorOfPrefix {
+				r := strings.TrimPrefix(prefix.String(), m.Prefix.String())
+				restPrefixes = append(restPrefixes, key.NewStrKey(r))
+
+				// We've found an ancestor (or equal) key. We might have
+				// more general datastores, but they won't contain keys
+				// with this prefix so there's no point in searching them.
+				break
+			}
 		}
 	}
-	return dst, mountpoint, rest
+	return dst, mountpoint, restPrefixes, restRanges
 }
 
 // Put puts the given value into the datastore at the given key.
@@ -253,8 +277,8 @@ func (d *Datastore) Sync(prefix key.Key) error {
 
 	// Sync all mount points below the prefix
 	// Sync the mount point right at (or above) the prefix
-	dstores, prefixes, rest := d.lookupAll(prefix)
-	for i, suffix := range rest {
+	dstores, prefixes, restPrefixes, _ := d.lookupAll(prefix, query.Range{})
+	for i, suffix := range restPrefixes {
 		if err := dstores[i].Sync(suffix); err != nil {
 			merr = multierr.Append(merr, fmt.Errorf(
 				"syncing datastore at %s: %w",
@@ -316,13 +340,14 @@ func (d *Datastore) Delete(key key.Key) error {
 func (d *Datastore) Query(master query.Query) (query.Results, error) {
 	childQuery := query.Query{
 		Prefix:            master.Prefix,
+		Range:             master.Range,
 		Orders:            master.Orders,
 		KeysOnly:          master.KeysOnly,
 		ReturnExpirations: master.ReturnExpirations,
 		ReturnsSizes:      master.ReturnsSizes,
 	}
 
-	dses, mounts, rests := d.lookupAll(key.Clean(childQuery.Prefix))
+	dses, mounts, restPrefixes, restRanges := d.lookupAll(key.Clean(childQuery.Prefix), childQuery.Range)
 
 	queries := &querySet{
 		query: childQuery,
@@ -334,7 +359,8 @@ func (d *Datastore) Query(master query.Query) (query.Results, error) {
 		dstore := dses[i]
 
 		qi := childQuery
-		qi.Prefix = rests[i]
+		qi.Prefix = restPrefixes[i]
+		qi.Range = restRanges[i]
 		results, err := dstore.Query(qi)
 
 		if err != nil {

@@ -109,6 +109,15 @@ func (d *Datastore) prepareQuery(q dsq.Query) (naive, child dsq.Query) {
 	// Always let the child handle the key prefix.
 	child.Prefix = d.ConvertKey(key.Clean(child.Prefix))
 
+	// Always let the child handle the key range.
+	child.Range = dsq.Range{}
+	if child.Range.Start != nil {
+		child.Range.Start = d.ConvertKey(child.Range.Start)
+	}
+	if child.Range.End != nil {
+		child.Range.End = d.ConvertKey(child.Range.End)
+	}
+
 	// Check if the key transform is order-preserving so we can use the
 	// child datastore's built-in ordering.
 	orderPreserving := false

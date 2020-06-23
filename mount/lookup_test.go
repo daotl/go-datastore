@@ -10,6 +10,7 @@ import (
 	"testing"
 
 	key "github.com/bdware/go-datastore/key"
+	dsq "github.com/bdware/go-datastore/query"
 	dstest "github.com/bdware/go-datastore/test"
 )
 
@@ -24,12 +25,12 @@ func TestLookup(t *testing.T) {
 		{Prefix: key.NewStrKey("/bar"), Datastore: mapds2},
 		{Prefix: key.NewStrKey("/baz"), Datastore: mapds3},
 	})
-	_, mnts, _ := m.lookupAll(key.NewStrKey("/bar"))
+	_, mnts, _, _ := m.lookupAll(key.NewStrKey("/bar"), dsq.Range{})
 	if len(mnts) != 1 || mnts[0] != key.NewStrKey("/bar") {
 		t.Errorf("expected to find the mountpoint /bar, got %v", mnts)
 	}
 
-	_, mnts, _ = m.lookupAll(key.NewStrKey("/fo"))
+	_, mnts, _, _ = m.lookupAll(key.NewStrKey("/fo"), dsq.Range{})
 	if len(mnts) != 1 || mnts[0] != key.NewStrKey("/") {
 		t.Errorf("expected to find the mountpoint /, got %v", mnts)
 	}

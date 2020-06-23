@@ -59,6 +59,7 @@ Notes:
 */
 type Query struct {
 	Prefix            key.Key  // namespaces the query to results whose keys have Prefix
+	Range             Range    // limit results to those whose keys are in Range
 	Filters           []Filter // filter results. apply sequentially
 	Orders            []Order  // order results. apply hierarchically
 	Limit             int      // maximum number of results
@@ -68,6 +69,11 @@ type Query struct {
 	ReturnsSizes      bool     // always return sizes. If not set, datastore impl can return
 	//                         // it anyway if it doesn't involve a performance cost. If KeysOnly
 	//                         // is not set, Size should always be set.
+}
+
+type Range struct {
+	Start key.Key // Start of the key range, include in the range.
+	End   key.Key // End of the key range, not include in the range.
 }
 
 // String returns a string representation of the Query for debugging/validation
@@ -85,6 +91,10 @@ func (q Query) String() string {
 
 	if q.Prefix != nil && q.Prefix.String() != "" {
 		s += fmt.Sprintf("FROM %q ", q.Prefix)
+	}
+
+	if q.Range.Start != nil || q.Range.End != nil {
+		s += fmt.Sprintf("RANGE [%q, %q) ", q.Range.Start, q.Range.End)
 	}
 
 	if len(q.Filters) > 0 {

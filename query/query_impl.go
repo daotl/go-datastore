@@ -149,6 +149,9 @@ func NaiveQueryApply(q Query, qr Results) Results {
 			panic(key.ErrKeyTypeNotSupported)
 		}
 	}
+	if q.Range.Start != nil || q.Range.End != nil {
+		qr = NaiveFilter(qr, FilterKeyRange{q.Range})
+	}
 	for _, f := range q.Filters {
 		qr = NaiveFilter(qr, f)
 	}

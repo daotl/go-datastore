@@ -110,3 +110,48 @@ func TestFilterKeyPrefix(t *testing.T) {
 		"abcf",
 	}))
 }
+
+func TestFilterKeyRange(t *testing.T) {
+
+	// StrKey
+	testKeyFilter(t, FilterKeyRange{Range{key.QueryStrKey("/ab/c"), nil}}, sampleStrKeys, key.StrsToKeys([]string{
+		"/ab/c",
+		"/ab/cd",
+		"/ab/ef",
+		"/ab/fg",
+		"/abce",
+		"/abcf",
+	}))
+	testKeyFilter(t, FilterKeyRange{Range{nil, key.QueryStrKey("/ab/fg")}}, sampleStrKeys, key.StrsToKeys([]string{
+		"/ab/c",
+		"/ab/cd",
+		"/ab/ef",
+		"/a",
+		"/ab",
+	}))
+	testKeyFilter(t, FilterKeyRange{Range{key.QueryStrKey("/ab/c"), key.QueryStrKey("/ab/fg")}}, sampleStrKeys, key.StrsToKeys([]string{
+		"/ab/c",
+		"/ab/cd",
+		"/ab/ef",
+	}))
+
+	// BytesKey
+	testKeyFilter(t, FilterKeyRange{Range{key.NewBytesKeyFromString("abc"), nil}}, sampleBytesKeys, key.StrsToBytesKeys([]string{
+		"abc",
+		"abcd",
+		"abef",
+		"abfg",
+		"abce",
+		"abcf",
+	}))
+	testKeyFilter(t, FilterKeyRange{Range{nil, key.NewBytesKeyFromString("abce")}}, sampleBytesKeys, key.StrsToBytesKeys([]string{
+		"abc",
+		"abcd",
+		"a",
+		"ab",
+	}))
+	testKeyFilter(t, FilterKeyRange{Range{key.NewBytesKeyFromString("abc"), key.NewBytesKeyFromString("abce")}}, sampleBytesKeys, key.StrsToBytesKeys([]string{
+		"abc",
+		"abcd",
+	}))
+}
