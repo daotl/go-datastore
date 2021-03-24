@@ -20,8 +20,10 @@ import (
 func Test(t *testing.T) { TestingT(t) }
 
 type StrKeySuite struct{}
+type BytesKeySuite struct{}
 
 var _ = Suite(&StrKeySuite{})
+var _ = Suite(&BytesKeySuite{})
 
 func (ks *StrKeySuite) SubtestStrKey(s string, c *C) {
 	fixed := path.Clean("/" + s)
@@ -69,6 +71,21 @@ func (ks *StrKeySuite) SubtestStrKey(s string, c *C) {
 	c.Check(NewStrKey(s).Less(NewStrKey(s).ChildString("foo")), Equals, true)
 }
 
+func (ks *BytesKeySuite) SubtestBytesKey(bs []byte, c *C) {
+	kchild := append(bs, []byte("cchildd")...)
+
+	c.Log("Testing: ", NewBytesKey(bs))
+
+	c.Check(NewBytesKey(bs).Bytes(), DeepEquals, bs)
+	c.Check(NewBytesKey(bs).Equal(NewBytesKey(bs)), Equals, true)
+	c.Check(NewBytesKey(bs).String(), Equals, NewBytesKey(bs).String())
+
+	c.Check(NewBytesKey(bs).Child(NewBytesKeyFromString("cchildd")).Bytes(), DeepEquals, kchild)
+
+	c.Check(NewBytesKey(bs).Equal(NewBytesKey(bs)), Equals, true)
+	c.Check(NewBytesKey(bs).Equal(NewBytesKey(append([]byte("fdsafdsa"), bs...))), Equals, false)
+}
+
 func (ks *StrKeySuite) TestStrKeyBasic(c *C) {
 	ks.SubtestStrKey("", c)
 	ks.SubtestStrKey("abcde", c)
@@ -81,6 +98,13 @@ func (ks *StrKeySuite) TestStrKeyBasic(c *C) {
 	ks.SubtestStrKey("/fdisahfodisa/fdsa/fdsafdsafdsafdsa/fdsafdsa/:", c)
 	ks.SubtestStrKey("4215432143214321432143214321:", c)
 	ks.SubtestStrKey("fdisaha////fdsa////fdsafdsafdsafdsa/fdsafdsa/f:fdaf", c)
+}
+
+func (ks *BytesKeySuite) TestBytesKeyBasic(c *C) {
+	ks.SubtestBytesKey([]byte(""), c)
+	ks.SubtestBytesKey([]byte("abcde"), c)
+	ks.SubtestBytesKey([]byte("disahfidsalfhduisaufidsail"), c)
+	ks.SubtestBytesKey([]byte("4215432143214321432143214321"), c)
 }
 
 func CheckTrue(c *C, cond bool) {
@@ -115,6 +139,31 @@ func (ks *StrKeySuite) TestStrKeyAncestry(c *C) {
 	c.Check(k1.Path().String(), Equals, k2.Parent().Path().String())
 }
 
+func (ks *BytesKeySuite) TestBytesKeyAncestry(c *C) {
+	k1 := NewBytesKeyFromString("ABC")
+	k2 := NewBytesKeyFromString("ABCD")
+	k3 := NewBytesKeyFromString("AB")
+	k4 := NewBytesKeyFromString("A")
+
+	c.Check(k1.Bytes(), DeepEquals, []byte("ABC"))
+	c.Check(k2.Bytes(), DeepEquals, []byte("ABCD"))
+	CheckTrue(c, k1.IsAncestorOf(k2))
+	CheckTrue(c, k2.IsDescendantOf(k1))
+	CheckTrue(c, k4.IsAncestorOf(k2))
+	CheckTrue(c, k4.IsAncestorOf(k1))
+	CheckTrue(c, !k4.IsDescendantOf(k2))
+	CheckTrue(c, !k4.IsDescendantOf(k1))
+	CheckTrue(c, k3.IsDescendantOf(k4))
+	CheckTrue(c, k4.IsAncestorOf(k3))
+	CheckTrue(c, k2.IsDescendantOf(k4))
+	CheckTrue(c, k1.IsDescendantOf(k4))
+	CheckTrue(c, !k2.IsAncestorOf(k4))
+	CheckTrue(c, !k1.IsAncestorOf(k4))
+	CheckTrue(c, !k2.IsAncestorOf(k2))
+	CheckTrue(c, !k1.IsAncestorOf(k1))
+	c.Check(k1.Child(NewBytesKeyFromString("D")).String(), Equals, k2.String())
+}
+
 func (ks *StrKeySuite) TestStrKeyType(c *C) {
 	k1 := NewStrKey("/A/B/C:c")
 	k2 := NewStrKey("/A/B/C:c/D:d")
@@ -137,6 +186,17 @@ func (ks *StrKeySuite) TestStrKeyRandom(c *C) {
 	CheckTrue(c, len(keys) == 1000)
 }
 
+func (ks *BytesKeySuite) TestBytesKeyRandom(c *C) {
+	keys := map[string]bool{}
+	for i := 0; i < 1000; i++ {
+		r := RandomBytesKey()
+		_, found := keys[r.String()]
+		CheckTrue(c, !found)
+		keys[r.String()] = true
+	}
+	CheckTrue(c, len(keys) == 1000)
+}
+
 func (ks *StrKeySuite) TestStrKeyLess(c *C) {
 
 	checkLess := func(a, b string) {
@@ -153,6 +213,24 @@ func (ks *StrKeySuite) TestStrKeyLess(c *C) {
 	checkLess("/a/a/d", "/a/b/c")
 	checkLess("/a/b/c/d/e/f/g/h", "/b")
 	checkLess("/", "/a")
+}
+
+func (ks *BytesKeySuite) TestBytesKeyLess(c *C) {
+
+	checkLess := func(a, b string) {
+		ak := NewBytesKeyFromString(a)
+		bk := NewBytesKeyFromString(b)
+		c.Check(ak.Less(bk), Equals, true)
+		c.Check(bk.Less(ak), Equals, false)
+	}
+
+	checkLess("abc", "abcd")
+	checkLess("ab", "abcd")
+	checkLess("a", "abcd")
+	checkLess("aac", "abc")
+	checkLess("aad", "abc")
+	checkLess("abcdefgh", "b")
+	checkLess("", "a")
 }
 
 func TestStrKeyMarshalJSON(t *testing.T) {
@@ -186,27 +264,29 @@ func TestStrKeyMarshalJSON(t *testing.T) {
 	}
 }
 
-func TestStrKeyUnmarshalJSON(t *testing.T) {
+func TestBytesKeyMarshalUnmarshalJSON(t *testing.T) {
 	cases := []struct {
-		data []byte
-		key  Key
-		err  string
+		key Key
+		err string
 	}{
-		{[]byte("\"/a/b/c\""), NewStrKey("/a/b/c"), ""},
-		{[]byte{}, NewStrKey(""), "unexpected end of JSON input"},
-		{[]byte{'"'}, NewStrKey(""), "unexpected end of JSON input"},
-		{[]byte(`""`), NewStrKey(""), ""},
+		{NewBytesKeyFromString("abc"), ""},
+		{NewBytesKeyFromString("/shouldescapekey\"/with/quote"), ""},
 	}
 
 	for i, c := range cases {
-		key := NewStrKey("")
-		err := key.UnmarshalJSON(c.data)
+		out, err := c.key.MarshalJSON()
 		if !(err == nil && c.err == "" || err != nil && err.Error() == c.err) {
 			t.Errorf("case %d marshal error mismatch: expected: %s, got: %s", i, c.err, err)
 		}
 
-		if !key.Equal(c.key) {
-			t.Errorf("case %d key mismatch: expected: %s, got: %s", i, c.key, key)
+		if c.err == "" {
+			key := NewBytesKey(nil)
+			if err := key.UnmarshalJSON(out); err != nil {
+				t.Errorf("case %d error parsing key from json output: %s", i, err.Error())
+			}
+			if !c.key.Equal(key) {
+				t.Errorf("case %d parsed key from json output mismatch. expected: %s, got: %s", i, c.key.String(), key.String())
+			}
 		}
 	}
 }

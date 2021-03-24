@@ -161,8 +161,8 @@ type testDatastore struct {
 	*dstore.MapDatastore
 }
 
-func NewTestDatastore(testErrors bool) *testDatastore {
-	ds, _ := dstore.NewMapDatastore(key.KeyTypeString)
+func NewTestDatastore(keyType key.KeyType, testErrors bool) *testDatastore {
+	ds, _ := dstore.NewMapDatastore(keyType)
 	return &testDatastore{
 		testErrors:   testErrors,
 		MapDatastore: ds,

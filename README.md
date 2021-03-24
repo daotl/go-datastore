@@ -3,12 +3,10 @@
 DAOT Labs's fork of [ipfs/go-datastore](https://github.com/ipfs/go-datastore).
 
 [![](https://img.shields.io/badge/made%20by-Protocol%20Labs-blue.svg?style=flat-square)](http://ipn.io)
-[![](https://img.shields.io/badge/project-DAOT_Labs-red.svg?style=flat-square)](http://github.
-com/daotl)
+[![](https://img.shields.io/badge/project-DAOT%20Labs-red.svg?style=flat-square)](http://github.com/daotl)
 [![standard-readme compliant](https://img.shields.io/badge/standard--readme-OK-green.svg?style=flat-square)](https://github.com/RichardLitt/standard-readme)
 [![go.dev reference](https://img.shields.io/badge/go.dev-reference-007d9c?logo=go&logoColor=white&style=flat-square)](https://pkg.go.dev/github.com/daotl/go-datastore)
-[![Build Status](https://travis-ci.com/daotl/go-datastore.svg?branch=master)](https://travis-ci.
-com/daotl/go-datastore)
+[![Build Status](https://travis-ci.com/daotl/go-datastore.svg?branch=master)](https://travis-ci.com/daotl/go-datastore)
 
 > key-value datastore interfaces
 
@@ -26,11 +24,18 @@ com/daotl/go-datastore)
 
 ## Background
 
-Datastore is a generic layer of abstraction for data store and database access. It is a simple API with the aim to enable application development in a datastore-agnostic way, allowing datastores to be swapped seamlessly without changing application code. Thus, one can leverage different datastores with different strengths without committing the application to one datastore throughout its lifetime.
+Datastore is a generic layer of abstraction for data store and database access.
+It is a simple API with the aim to enable application development in a datastore-agnostic way,
+allowing datastores to be swapped seamlessly without changing application code.
+Thus, one can leverage different datastores with different strengths without
+committing the application to one datastore throughout its lifetime.
 
-In addition, grouped datastores significantly simplify interesting data access patterns (such as caching and sharding).
+In addition, grouped datastores significantly simplify interesting data access
+patterns (such as caching and sharding).
 
-This fork adds support for bytes-backed keys in addition to existing string-backed keys.
+This fork adds support for bytes-backed keys in addition to original string-backed
+keys, which could improve performance in some cases by preventing type conversion
+and reducing key size.
 
 Based on [datastore.py](https://github.com/datastore/datastore).
 

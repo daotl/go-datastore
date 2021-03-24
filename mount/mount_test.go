@@ -18,6 +18,8 @@ import (
 	dstest "github.com/daotl/go-datastore/test"
 )
 
+// TODO: Tests for BytesKey
+
 func TestPutBadNothing(t *testing.T) {
 	m := mount.New(nil)
 
@@ -822,7 +824,7 @@ func TestErrQueryClose(t *testing.T) {
 }
 
 func TestMaintenanceFunctions(t *testing.T) {
-	mapds := dstest.NewTestDatastore(true)
+	mapds := dstest.NewTestDatastore(key.KeyTypeString, true)
 	m := mount.New([]mount.Mount{
 		{Prefix: key.NewStrKey("/"), Datastore: mapds},
 	})

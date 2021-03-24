@@ -22,11 +22,13 @@ import (
 // Hook up gocheck into the "go test" runner.
 func TestStrKey(t *testing.T) { TestingT(t) }
 
-type DSSuite struct{}
+type StrKeySuite struct{}
+type BytesKeySuite struct{}
 
-var _ = Suite(&DSSuite{})
+var _ = Suite(&StrKeySuite{})
+var _ = Suite(&BytesKeySuite{})
 
-var pair = &kt.Pair{
+var strKeyPair = &kt.Pair{
 	Convert: func(k key.Key) key.Key {
 		return key.NewStrKey("/abc").Child(k)
 	},
@@ -40,9 +42,23 @@ var pair = &kt.Pair{
 	},
 }
 
-func (ks *DSSuite) TestStrKeyBasic(c *C) {
-	mpds := dstest.NewTestDatastore(true)
-	ktds := kt.Wrap(mpds, pair)
+var bytesKeyPair = &kt.Pair{
+	Convert: func(k key.Key) key.Key {
+		return key.NewBytesKeyFromString("abc").Child(k)
+	},
+	Invert: func(k key.Key) key.Key {
+		prefix := key.NewBytesKeyFromString("abc")
+		// remove abc prefix
+		if !k.HasPrefix(prefix) {
+			panic("key does not have prefix. convert failed?")
+		}
+		return k.TrimPrefix(prefix)
+	},
+}
+
+func (ks *StrKeySuite) TestStrKeyBasic(c *C) {
+	mpds := dstest.NewTestDatastore(key.KeyTypeString, true)
+	ktds := kt.Wrap(mpds, strKeyPair)
 
 	keys := key.StrsToKeys([]string{
 		"foo",
@@ -54,18 +70,18 @@ func (ks *DSSuite) TestStrKeyBasic(c *C) {
 	})
 
 	for _, k := range keys {
-		err := ktds.Put(k, []byte(k.String()))
+		err := ktds.Put(k, k.Bytes())
 		c.Check(err, Equals, nil)
 	}
 
 	for _, k := range keys {
 		v1, err := ktds.Get(k)
 		c.Check(err, Equals, nil)
-		c.Check(bytes.Equal(v1, []byte(k.String())), Equals, true)
+		c.Check(bytes.Equal(v1, k.Bytes()), Equals, true)
 
 		v2, err := mpds.Get(key.NewStrKey("abc").Child(k))
 		c.Check(err, Equals, nil)
-		c.Check(bytes.Equal(v2, []byte(k.String())), Equals, true)
+		c.Check(bytes.Equal(v2, k.Bytes()), Equals, true)
 	}
 
 	run := func(d ds.Datastore, q dsq.Query) []key.Key {
@@ -88,8 +104,76 @@ func (ks *DSSuite) TestStrKeyBasic(c *C) {
 
 	for i, kA := range listA {
 		kB := listB[i]
-		c.Check(pair.Invert(kA), Equals, kB)
-		c.Check(kA, Equals, pair.Convert(kB))
+		c.Check(strKeyPair.Invert(kA), Equals, kB)
+		c.Check(kA, Equals, strKeyPair.Convert(kB))
+	}
+
+	c.Log("listA: ", listA)
+	c.Log("listB: ", listB)
+
+	if err := ktds.Check(); err != dstest.TestError {
+		c.Errorf("Unexpected Check() error: %s", err)
+	}
+
+	if err := ktds.CollectGarbage(); err != dstest.TestError {
+		c.Errorf("Unexpected CollectGarbage() error: %s", err)
+	}
+
+	if err := ktds.Scrub(); err != dstest.TestError {
+		c.Errorf("Unexpected Scrub() error: %s", err)
+	}
+}
+
+func (ks *BytesKeySuite) TestBytesKeyBasic(c *C) {
+	mpds := dstest.NewTestDatastore(key.KeyTypeBytes, true)
+	ktds := kt.Wrap(mpds, bytesKeyPair)
+
+	keys := key.StrsToBytesKeys([]string{
+		"foo",
+		"foobar",
+		"foobarbaz",
+		"foobarb",
+		"foobarbazb",
+		"foobarbazbarb",
+	})
+
+	for _, k := range keys {
+		err := ktds.Put(k, k.Bytes())
+		c.Check(err, Equals, nil)
+	}
+
+	for _, k := range keys {
+		v1, err := ktds.Get(k)
+		c.Check(err, Equals, nil)
+		c.Check(bytes.Equal(v1, k.Bytes()), Equals, true)
+
+		v2, err := mpds.Get(key.NewBytesKeyFromString("abc").Child(k))
+		c.Check(err, Equals, nil)
+		c.Check(bytes.Equal(v2, k.Bytes()), Equals, true)
+	}
+
+	run := func(d ds.Datastore, q dsq.Query) []key.Key {
+		r, err := d.Query(q)
+		c.Check(err, Equals, nil)
+
+		e, err := r.Rest()
+		c.Check(err, Equals, nil)
+
+		return dsq.EntryKeys(e)
+	}
+
+	listA := run(mpds, dsq.Query{})
+	listB := run(ktds, dsq.Query{})
+	c.Check(len(listA), Equals, len(listB))
+
+	// sort them cause yeah.
+	sort.Sort(key.KeySlice(listA))
+	sort.Sort(key.KeySlice(listB))
+
+	for i, kA := range listA {
+		kB := listB[i]
+		c.Check(bytesKeyPair.Invert(kA).Equal(kB), Equals, true)
+		c.Check(kA.Equal(bytesKeyPair.Convert(kB)), Equals, true)
 	}
 
 	c.Log("listA: ", listA)
@@ -109,13 +193,27 @@ func (ks *DSSuite) TestStrKeyBasic(c *C) {
 }
 
 func TestSuiteStrKeyDefaultPair(t *testing.T) {
-	mpds := dstest.NewTestDatastore(true)
-	ktds := kt.Wrap(mpds, pair)
+	mpds := dstest.NewTestDatastore(key.KeyTypeString, true)
+	ktds := kt.Wrap(mpds, strKeyPair)
 	dstest.SubtestAll(t, ktds)
 }
 
+// TODO
+//func TestSuiteBytesKeyDefaultPair(t *testing.T) {
+//	mpds := dstest.NewTestDatastore(key.KeyTypeBytes, true)
+//	ktds := kt.Wrap(mpds, bytesKeyPair)
+//	dstest.SubtestAll(t, ktds)
+//}
+
 func TestSuiteStrKeyPrefixTransform(t *testing.T) {
-	mpds := dstest.NewTestDatastore(true)
+	mpds := dstest.NewTestDatastore(key.KeyTypeString, true)
 	ktds := kt.Wrap(mpds, kt.PrefixTransform{Prefix: key.NewStrKey("/foo")})
 	dstest.SubtestAll(t, ktds)
 }
+
+// TODO
+//func TestSuiteBytesKeyPrefixTransform(t *testing.T) {
+//	mpds := dstest.NewTestDatastore(key.KeyTypeBytes, true)
+//	ktds := kt.Wrap(mpds, kt.PrefixTransform{Prefix: key.NewBytesKeyFromString("foo")})
+//	dstest.SubtestAll(t, ktds)
+//}

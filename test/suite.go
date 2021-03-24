@@ -14,6 +14,7 @@ import (
 	query "github.com/daotl/go-datastore/query"
 )
 
+// TODO: Subtests for BytesKey
 // BasicSubtests is a list of all basic tests.
 var BasicSubtests = []func(t *testing.T, ds dstore.Datastore){
 	SubtestBasicPutGet,

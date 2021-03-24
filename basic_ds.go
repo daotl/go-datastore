@@ -82,7 +82,7 @@ func (d *MapDatastore) Query(q dsq.Query) (dsq.Results, error) {
 		case key.KeyTypeString:
 			ek = key.RawStrKey(k)
 		case 1:
-			ek = key.NewBytesKey([]byte(k))
+			ek = key.NewBytesKeyFromString(k)
 		default:
 			panic(key.ErrKeyTypeNotSupported)
 		}

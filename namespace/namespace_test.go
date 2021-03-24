@@ -86,7 +86,7 @@ func (ks *DSSuite) testBasic(c *C, prefix string) {
 }
 
 func (ks *DSSuite) TestQuery(c *C) {
-	mpds := dstest.NewTestDatastore(true)
+	mpds := dstest.NewTestDatastore(key.KeyTypeString, true)
 	nsds := ns.Wrap(mpds, key.NewStrKey("/foo"))
 
 	keys := key.StrsToKeys([]string{
@@ -154,7 +154,7 @@ func (ks *DSSuite) TestQuery(c *C) {
 }
 
 func TestSuite(t *testing.T) {
-	mpds := dstest.NewTestDatastore(true)
+	mpds := dstest.NewTestDatastore(key.KeyTypeString, true)
 	nsds := ns.Wrap(mpds, key.NewStrKey("/foo"))
 	dstest.SubtestAll(t, nsds)
 }

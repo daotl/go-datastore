@@ -13,6 +13,8 @@ import (
 	dstest "github.com/daotl/go-datastore/test"
 )
 
+// TODO: Tests for BytesKey
+
 func TestLookup(t *testing.T) {
 	mapds0 := dstest.NewMapDatastoreForTest(t)
 	mapds1 := dstest.NewMapDatastoreForTest(t)

@@ -29,6 +29,8 @@ func TestElemCount(t *testing.T) {
 	}
 }
 
+// TODO: Subtests for BytesKey
+
 func SubtestBasicPutGet(t *testing.T, ds dstore.Datastore) {
 	k := key.NewStrKey("foo")
 	val := []byte("Hello Datastore!")
