@@ -3,15 +3,13 @@
 // fork are held by [DAOT Labs, 2020]. All rights reserved. Use of this source
 // code is governed by MIT license that can be found in the LICENSE file.
 
+// Package key provides the Key interface and the KeySlice type, along with
+// some utility functions around key.
 package key
 
 import (
 	"errors"
 	"fmt"
-)
-
-var (
-	ErrKeyTypeNotSupported = errors.New("key type not supported")
 )
 
 type KeyType uint8
@@ -23,25 +21,15 @@ const (
 	KeyTypeBytes
 )
 
+var (
+	ErrKeyTypeNotSupported = errors.New("key type not supported")
+)
+
 /*
 A Key represents the unique identifier of an object.
 Keys are meant to be unique across a system.
-
-String-backed Key scheme is inspired by file systems and Google App Engine key model.
-String-backed StrKeys are hierarchical, incorporating more and more specific
-namespaces. Thus keys can be deemed 'children' or 'ancestors' of other keys::
-
-    StrKey("/Comedy")
-    StrKey("/Comedy/MontyPython")
-
-Also, every namespace can be parametrized to embed relevant object
-information. For example, the StrKey `name` (most specific namespace) could
-include the object type::
-
-    StrKey("/Comedy/MontyPython/Actor:JohnCleese")
-    StrKey("/Comedy/MontyPython/Sketch:CheeseShop")
-    StrKey("/Comedy/MontyPython/Sketch:CheeseShop/Character:Mousebender")
-
+There are two Key implementations:
+StrKey backed by string and BytesKey backed by byte slice.
 */
 type Key interface {
 	fmt.Stringer
@@ -74,6 +62,7 @@ type Key interface {
 	MarshalJSON() ([]byte, error)
 }
 
+// Clean up a StrKey, using path.Clean, no-op for BytesKey.
 func Clean(k Key) Key {
 	if k == nil {
 		return nil
@@ -117,7 +106,8 @@ func (p KeySlice) Len() int           { return len(p) }
 func (p KeySlice) Less(i, j int) bool { return p[i].Less(p[j]) }
 func (p KeySlice) Swap(i, j int)      { p[i], p[j] = p[j], p[i] }
 
-// Joins keys in the KeySlice into a single key
+// Join Joins keys in the KeySlice into a single key,
+// returns NewStrKey("") if slice is empty.
 func (p KeySlice) Join() Key {
 	if len(p) == 0 {
 		return NewStrKey("")

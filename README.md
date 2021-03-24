@@ -3,12 +3,10 @@
 DAOT Labs's fork of [ipfs/go-datastore](https://github.com/ipfs/go-datastore).
 
 [![](https://img.shields.io/badge/made%20by-Protocol%20Labs-blue.svg?style=flat-square)](http://ipn.io)
-[![](https://img.shields.io/badge/project-DAOT_Labs-red.svg?style=flat-square)](http://github.
-com/daotl)
+[![](https://img.shields.io/badge/project-DAOT%20Labs-red.svg?style=flat-square)](http://github.com/daotl)
 [![standard-readme compliant](https://img.shields.io/badge/standard--readme-OK-green.svg?style=flat-square)](https://github.com/RichardLitt/standard-readme)
 [![go.dev reference](https://img.shields.io/badge/go.dev-reference-007d9c?logo=go&logoColor=white&style=flat-square)](https://pkg.go.dev/github.com/daotl/go-datastore)
-[![Build Status](https://travis-ci.com/daotl/go-datastore.svg?branch=master)](https://travis-ci.
-com/daotl/go-datastore)
+[![Build Status](https://travis-ci.com/daotl/go-datastore.svg?branch=master)](https://travis-ci.com/daotl/go-datastore)
 
 > key-value datastore interfaces
 
