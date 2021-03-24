@@ -6,9 +6,9 @@
 //  import (
 //    "fmt"
 //
-//    ds "github.com/bdware/go-datastore"
-//    key "github.com/bdware/go-datastore/key"
-//    nsds "github.com/bdware/go-datastore/namespace"
+//    ds "github.com/daotl/go-datastore"
+//    key "github.com/daotl/go-datastore/key"
+//    nsds "github.com/daotl/go-datastore/namespace"
 //  )
 //
 //  func main() {

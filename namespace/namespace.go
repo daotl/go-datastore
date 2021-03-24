@@ -1,9 +1,14 @@
+// Copyright for portions of this fork are held by [Juan Batiz-Benet, 2016]
+// as part of the original go-datastore project. All other copyright for this
+// fork are held by [DAOT Labs, 2020]. All rights reserved. Use of this source
+// code is governed by MIT license that can be found in the LICENSE file.
+
 package namespace
 
 import (
-	ds "github.com/bdware/go-datastore"
-	key "github.com/bdware/go-datastore/key"
-	ktds "github.com/bdware/go-datastore/keytransform"
+	ds "github.com/daotl/go-datastore"
+	key "github.com/daotl/go-datastore/key"
+	ktds "github.com/daotl/go-datastore/keytransform"
 )
 
 // PrefixTransform constructs a KeyTransform with a pair of functions that

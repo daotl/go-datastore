@@ -1,12 +1,14 @@
 # go-datastore
 
-Fork of [ipfs/go-datastore](https://github.com/ipfs/go-datastore) used by BDWare projects.
+DAOT Labs's fork of [ipfs/go-datastore](https://github.com/ipfs/go-datastore).
 
 [![](https://img.shields.io/badge/made%20by-Protocol%20Labs-blue.svg?style=flat-square)](http://ipn.io)
-[![](https://img.shields.io/badge/project-BDWare-red.svg?style=flat-square)](http://bdware.org/)
+[![](https://img.shields.io/badge/project-DAOT_Labs-red.svg?style=flat-square)](http://github.
+com/daotl)
 [![standard-readme compliant](https://img.shields.io/badge/standard--readme-OK-green.svg?style=flat-square)](https://github.com/RichardLitt/standard-readme)
-[![go.dev reference](https://img.shields.io/badge/go.dev-reference-007d9c?logo=go&logoColor=white&style=flat-square)](https://pkg.go.dev/github.com/bdware/go-datastore)
-[![Build Status](https://travis-ci.com/BDWare/go-datastore.svg?branch=master)](https://travis-ci.com/BDWare/go-datastore)
+[![go.dev reference](https://img.shields.io/badge/go.dev-reference-007d9c?logo=go&logoColor=white&style=flat-square)](https://pkg.go.dev/github.com/daotl/go-datastore)
+[![Build Status](https://travis-ci.com/daotl/go-datastore.svg?branch=master)](https://travis-ci.
+com/daotl/go-datastore)
 
 > key-value datastore interfaces
 
@@ -35,16 +37,16 @@ Based on [datastore.py](https://github.com/datastore/datastore).
 ## Install
 
 ```sh
-go get github.com/bdware/go-datastore
+go get github.com/daotl/go-datastore
 ```
 
 ## Documentation
 
-See [API documentation](https://pkg.go.dev/github.com/bdware/go-datastore).
+See [API documentation](https://pkg.go.dev/github.com/daotl/go-datastore).
 
 ## Contribute
 
-Feel free to join in. All welcome. Open an [issue](https://github.com/BDWare/go-datastore/issues)!
+Feel free to join in. All welcome. Open an [issue](https://github.com/daotl/go-datastore/issues)!
 
 ## License
 
@@ -52,10 +54,6 @@ Feel free to join in. All welcome. Open an [issue](https://github.com/BDWare/go-
 
 Copyright for portions of this fork are held by [Protocol Labs, 2016] as part of the original [go-datastore](https://github.com/ipfs/go-datastore) project.
 
-All other copyright for this fork are held by [The BDWare Authors, 2020].
+All other copyright for this fork are held by [DAOT Labs, 2020].
 
 All rights reserved.
-
----
-
-The last gx published version of this module was: 4.4.34: QmXuNFLZc6Nb5akB4sZsxK3doShsFKT1sZFvxLXJvZQwAW

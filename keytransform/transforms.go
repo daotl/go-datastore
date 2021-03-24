@@ -1,6 +1,11 @@
+// Copyright for portions of this fork are held by [Juan Batiz-Benet, 2016]
+// as part of the original go-datastore project. All other copyright for this
+// fork are held by [DAOT Labs, 2020]. All rights reserved. Use of this source
+// code is governed by MIT license that can be found in the LICENSE file.
+
 package keytransform
 
-import key "github.com/bdware/go-datastore/key"
+import key "github.com/daotl/go-datastore/key"
 
 // Pair is a convince struct for constructing a key transform.
 type Pair struct {

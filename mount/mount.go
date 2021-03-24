@@ -1,8 +1,7 @@
-// Copyright for portions of this fork are held by [Juan Batiz-Benet, 2016] as
-// part of the original go-datastore project. All other copyright for
-// this fork are held by [The BDWare Authors, 2020]. All rights reserved.
-// Use of this source code is governed by MIT license that can be
-// found in the LICENSE file.
+// Copyright for portions of this fork are held by [Juan Batiz-Benet, 2016]
+// as part of the original go-datastore project. All other copyright for this
+// fork are held by [DAOT Labs, 2020]. All rights reserved. Use of this source
+// code is governed by MIT license that can be found in the LICENSE file.
 
 // Package mount provides a Datastore that has other Datastores
 // mounted at various key prefixes and is threadsafe
@@ -18,9 +17,9 @@ import (
 
 	"go.uber.org/multierr"
 
-	ds "github.com/bdware/go-datastore"
-	key "github.com/bdware/go-datastore/key"
-	query "github.com/bdware/go-datastore/query"
+	ds "github.com/daotl/go-datastore"
+	key "github.com/daotl/go-datastore/key"
+	query "github.com/daotl/go-datastore/query"
 )
 
 var (

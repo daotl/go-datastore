@@ -1,8 +1,7 @@
-// Copyright for portions of this fork are held by [Juan Batiz-Benet, 2016] as
-// part of the original go-datastore project. All other copyright for
-// this fork are held by [The BDWare Authors, 2020]. All rights reserved.
-// Use of this source code is governed by MIT license that can be
-// found in the LICENSE file.
+// Copyright for portions of this fork are held by [Juan Batiz-Benet, 2016]
+// as part of the original go-datastore project. All other copyright for this
+// fork are held by [DAOT Labs, 2020]. All rights reserved. Use of this source
+// code is governed by MIT license that can be found in the LICENSE file.
 
 // Package failstore implements a datastore which can produce
 // custom failures on operations by calling a user-provided
@@ -10,9 +9,9 @@
 package failstore
 
 import (
-	ds "github.com/bdware/go-datastore"
-	key "github.com/bdware/go-datastore/key"
-	dsq "github.com/bdware/go-datastore/query"
+	ds "github.com/daotl/go-datastore"
+	key "github.com/daotl/go-datastore/key"
+	dsq "github.com/daotl/go-datastore/query"
 )
 
 // Failstore is a datastore which fails according to a user-provided

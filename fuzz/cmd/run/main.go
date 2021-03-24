@@ -1,8 +1,7 @@
-// Copyright for portions of this fork are held by [Juan Batiz-Benet, 2016] as
-// part of the original go-datastore project. All other copyright for
-// this fork are held by [The BDWare Authors, 2020]. All rights reserved.
-// Use of this source code is governed by MIT license that can be
-// found in the LICENSE file.
+// Copyright for portions of this fork are held by [Juan Batiz-Benet, 2016]
+// as part of the original go-datastore project. All other copyright for this
+// fork are held by [DAOT Labs, 2020]. All rights reserved. Use of this source
+// code is governed by MIT license that can be found in the LICENSE file.
 
 package main
 
@@ -14,7 +13,7 @@ import (
 
 	"github.com/spf13/pflag"
 
-	fuzzer "github.com/bdware/go-datastore/fuzz"
+	fuzzer "github.com/daotl/go-datastore/fuzz"
 )
 
 var input *string = pflag.StringP("input", "i", "", "file to read input from (stdin used if not specified)")

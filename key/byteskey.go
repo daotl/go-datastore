@@ -1,6 +1,5 @@
-// Copyright (c) 2020 The BDWare Authors. All rights reserved.
-// Use of this source code is governed by MIT license that can be
-// found in the LICENSE file.
+// Copyright (c) 2020 DAOT Labs. All rights reserved. Use of this source
+// code is governed by MIT license that can be found in the LICENSE file.
 
 package key
 

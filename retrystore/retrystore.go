@@ -1,3 +1,8 @@
+// Copyright for portions of this fork are held by [Juan Batiz-Benet, 2016]
+// as part of the original go-datastore project. All other copyright for this
+// fork are held by [DAOT Labs, 2020]. All rights reserved. Use of this source
+// code is governed by MIT license that can be found in the LICENSE file.
+
 // Package retrystore provides a datastore wrapper which
 // allows to retry operations.
 package retrystore
@@ -7,8 +12,8 @@ import (
 
 	xerrors "golang.org/x/xerrors"
 
-	ds "github.com/bdware/go-datastore"
-	key "github.com/bdware/go-datastore/key"
+	ds "github.com/daotl/go-datastore"
+	key "github.com/daotl/go-datastore/key"
 )
 
 // Datastore wraps a Batching datastore with a

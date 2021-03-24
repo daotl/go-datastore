@@ -1,7 +1,7 @@
 # autobatch
 
 Autobatch is an implementation of
-[go-datastore](https://github.com/ipfs/go-datastore) that automatically batches
+[go-datastore](https://github.com/daotl/go-datastore) that automatically batches
 together writes by holding puts in memory until a certain threshold is met.
 This can improve disk performance at the cost of memory in certain situations.
 

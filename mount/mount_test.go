@@ -1,8 +1,7 @@
-// Copyright for portions of this fork are held by [Juan Batiz-Benet, 2016] as
-// part of the original go-datastore project. All other copyright for
-// this fork are held by [The BDWare Authors, 2020]. All rights reserved.
-// Use of this source code is governed by MIT license that can be
-// found in the LICENSE file.
+// Copyright for portions of this fork are held by [Juan Batiz-Benet, 2016]
+// as part of the original go-datastore project. All other copyright for this
+// fork are held by [DAOT Labs, 2020]. All rights reserved. Use of this source
+// code is governed by MIT license that can be found in the LICENSE file.
 
 package mount_test
 
@@ -10,13 +9,13 @@ import (
 	"errors"
 	"testing"
 
-	datastore "github.com/bdware/go-datastore"
-	autobatch "github.com/bdware/go-datastore/autobatch"
-	key "github.com/bdware/go-datastore/key"
-	mount "github.com/bdware/go-datastore/mount"
-	query "github.com/bdware/go-datastore/query"
-	sync "github.com/bdware/go-datastore/sync"
-	dstest "github.com/bdware/go-datastore/test"
+	datastore "github.com/daotl/go-datastore"
+	autobatch "github.com/daotl/go-datastore/autobatch"
+	key "github.com/daotl/go-datastore/key"
+	mount "github.com/daotl/go-datastore/mount"
+	query "github.com/daotl/go-datastore/query"
+	sync "github.com/daotl/go-datastore/sync"
+	dstest "github.com/daotl/go-datastore/test"
 )
 
 func TestPutBadNothing(t *testing.T) {
