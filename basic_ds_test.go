@@ -11,23 +11,39 @@ import (
 	"testing"
 
 	dstore "github.com/daotl/go-datastore"
+	"github.com/daotl/go-datastore/key"
 	dstest "github.com/daotl/go-datastore/test"
 )
 
+func testMapDatastore(t *testing.T, keyType key.KeyType) {
+	ds := dstest.NewMapDatastoreForTest(t, keyType)
+	dstest.SubtestAll(t, keyType, ds)
+}
+
 func TestMapDatastore(t *testing.T) {
-	ds := dstest.NewMapDatastoreForTest(t)
-	dstest.SubtestAll(t, ds)
+	testMapDatastore(t, key.KeyTypeString)
+	testMapDatastore(t, key.KeyTypeBytes)
+}
+
+func testNullDatastore(t *testing.T, keyType key.KeyType) {
+	ds := dstore.NewNullDatastore()
+	// The only test that passes. Nothing should be found.
+	dstest.SubtestNotFounds(t, keyType, ds)
 }
 
 func TestNullDatastore(t *testing.T) {
-	ds := dstore.NewNullDatastore()
-	// The only test that passes. Nothing should be found.
-	dstest.SubtestNotFounds(t, ds)
+	testNullDatastore(t, key.KeyTypeString)
+	testNullDatastore(t, key.KeyTypeBytes)
+}
+
+func testLogDatastore(t *testing.T, keyType key.KeyType) {
+	defer log.SetOutput(log.Writer())
+	log.SetOutput(ioutil.Discard)
+	ds := dstore.NewLogDatastore(dstest.NewMapDatastoreForTest(t, keyType), "")
+	dstest.SubtestAll(t, keyType, ds)
 }
 
 func TestLogDatastore(t *testing.T) {
-	defer log.SetOutput(log.Writer())
-	log.SetOutput(ioutil.Discard)
-	ds := dstore.NewLogDatastore(dstest.NewMapDatastoreForTest(t), "")
-	dstest.SubtestAll(t, ds)
+	testLogDatastore(t, key.KeyTypeString)
+	testLogDatastore(t, key.KeyTypeBytes)
 }

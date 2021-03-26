@@ -29,10 +29,8 @@ func TestElemCount(t *testing.T) {
 	}
 }
 
-// TODO: Subtests for BytesKey
-
-func SubtestBasicPutGet(t *testing.T, ds dstore.Datastore) {
-	k := key.NewStrKey("foo")
+func SubtestBasicPutGet(t *testing.T, keyType key.KeyType, ds dstore.Datastore) {
+	k := key.NewKeyFromTypeAndString(keyType, "foo")
 	val := []byte("Hello Datastore!")
 
 	err := ds.Put(k, val)
@@ -110,8 +108,8 @@ func SubtestBasicPutGet(t *testing.T, ds dstore.Datastore) {
 	}
 }
 
-func SubtestNotFounds(t *testing.T, ds dstore.Datastore) {
-	badk := key.NewStrKey("notreal")
+func SubtestNotFounds(t *testing.T, keyType key.KeyType, ds dstore.Datastore) {
+	badk := key.NewKeyFromTypeAndString(keyType, "notreal")
 
 	val, err := ds.Get(badk)
 	if err != dstore.ErrNotFound {
@@ -148,10 +146,10 @@ func SubtestNotFounds(t *testing.T, ds dstore.Datastore) {
 	}
 }
 
-func SubtestLimit(t *testing.T, ds dstore.Datastore) {
+func SubtestLimit(t *testing.T, keyType key.KeyType, ds dstore.Datastore) {
 	test := func(offset, limit int) {
 		t.Run(fmt.Sprintf("Slice/%d/%d", offset, limit), func(t *testing.T) {
-			subtestQuery(t, ds, dsq.Query{
+			subtestQuery(t, keyType, ds, dsq.Query{
 				Orders:   []dsq.Order{dsq.OrderByKey{}},
 				Offset:   offset,
 				Limit:    limit,
@@ -172,7 +170,7 @@ func SubtestLimit(t *testing.T, ds dstore.Datastore) {
 	test(ElemCount-5, 0)
 }
 
-func SubtestOrder(t *testing.T, ds dstore.Datastore) {
+func SubtestOrder(t *testing.T, keyType key.KeyType, ds dstore.Datastore) {
 	test := func(orders ...dsq.Order) {
 		var types []string
 		for _, o := range orders {
@@ -180,7 +178,7 @@ func SubtestOrder(t *testing.T, ds dstore.Datastore) {
 		}
 		name := strings.Join(types, ">")
 		t.Run(name, func(t *testing.T) {
-			subtestQuery(t, ds, dsq.Query{
+			subtestQuery(t, keyType, ds, dsq.Query{
 				Orders: orders,
 			}, ElemCount)
 		})
@@ -196,36 +194,37 @@ func SubtestOrder(t *testing.T, ds dstore.Datastore) {
 	}))
 }
 
-func SubtestManyKeysAndQuery(t *testing.T, ds dstore.Datastore) {
-	subtestQuery(t, ds, dsq.Query{KeysOnly: true}, ElemCount)
+func SubtestManyKeysAndQuery(t *testing.T, keyType key.KeyType, ds dstore.Datastore) {
+	subtestQuery(t, keyType, ds, dsq.Query{KeysOnly: true}, ElemCount)
 }
 
-func SubtestBasicSync(t *testing.T, ds dstore.Datastore) {
-	if err := ds.Sync(key.NewStrKey("prefix")); err != nil {
+func SubtestBasicSync(t *testing.T, keyType key.KeyType, ds dstore.Datastore) {
+	if err := ds.Sync(key.NewKeyFromTypeAndString(keyType, "prefix")); err != nil {
 		t.Fatal(err)
 	}
 
-	if err := ds.Put(key.NewStrKey("/prefix"), []byte("foo")); err != nil {
+	if err := ds.Put(key.NewKeyFromTypeAndString(keyType, "/prefix"), []byte("foo")); err != nil {
 		t.Fatal(err)
 	}
 
-	if err := ds.Sync(key.NewStrKey("/prefix")); err != nil {
+	if err := ds.Sync(key.NewKeyFromTypeAndString(keyType, "/prefix")); err != nil {
 		t.Fatal(err)
 	}
 
-	if err := ds.Put(key.NewStrKey("/prefix/sub"), []byte("bar")); err != nil {
+	if err := ds.Put(key.NewKeyFromTypeAndString(keyType, "/prefix/sub"),
+		[]byte("bar")); err != nil {
 		t.Fatal(err)
 	}
 
-	if err := ds.Sync(key.NewStrKey("/prefix")); err != nil {
+	if err := ds.Sync(key.NewKeyFromTypeAndString(keyType, "/prefix")); err != nil {
 		t.Fatal(err)
 	}
 
-	if err := ds.Sync(key.NewStrKey("/prefix/sub")); err != nil {
+	if err := ds.Sync(key.NewKeyFromTypeAndString(keyType, "/prefix/sub")); err != nil {
 		t.Fatal(err)
 	}
 
-	if err := ds.Sync(key.NewStrKey("")); err != nil {
+	if err := ds.Sync(key.NewKeyFromTypeAndString(keyType, "")); err != nil {
 		t.Fatal(err)
 	}
 }
@@ -238,7 +237,7 @@ func (testFilter) Filter(e dsq.Entry) bool {
 	return len(e.Key.Bytes())%2 == 0
 }
 
-func SubtestCombinations(t *testing.T, ds dstore.Datastore) {
+func SubtestCombinations(t *testing.T, keyType key.KeyType, ds dstore.Datastore) {
 	offsets := []int{
 		0,
 		ElemCount / 10,
@@ -254,14 +253,14 @@ func SubtestCombinations(t *testing.T, ds dstore.Datastore) {
 	filters := [][]dsq.Filter{
 		{dsq.FilterKeyCompare{
 			Op:  dsq.Equal,
-			Key: key.QueryStrKey("/0key0"),
+			Key: key.QueryKeyFromTypeAndString(keyType, "/0key0"),
 		}},
 		{dsq.FilterKeyCompare{
 			Op:  dsq.LessThan,
-			Key: key.QueryStrKey("/2"),
+			Key: key.QueryKeyFromTypeAndString(keyType, "/2"),
 		}},
 	}
-	prefixes := key.StrsToQueryKeys([]string{
+	prefixes := key.TypeAndStrsToQueryKeys(keyType, []string{
 		"",
 		"/prefix",
 		"/0", // keys exist under this prefix but they shouldn't match.
@@ -289,7 +288,7 @@ func SubtestCombinations(t *testing.T, ds dstore.Datastore) {
 			length := lengths[perm[5]]
 
 			t.Run(strings.ReplaceAll(fmt.Sprintf("%d/{%s}", length, q), " ", "·"), func(t *testing.T) {
-				subtestQuery(t, ds, q, length)
+				subtestQuery(t, keyType, ds, q, length)
 			})
 		},
 		len(offsets),
@@ -318,7 +317,7 @@ outer:
 	}
 }
 
-func SubtestFilter(t *testing.T, ds dstore.Datastore) {
+func SubtestFilter(t *testing.T, keyType key.KeyType, ds dstore.Datastore) {
 	test := func(filters ...dsq.Filter) {
 		var types []string
 		for _, o := range filters {
@@ -326,32 +325,32 @@ func SubtestFilter(t *testing.T, ds dstore.Datastore) {
 		}
 		name := strings.Join(types, ">")
 		t.Run(name, func(t *testing.T) {
-			subtestQuery(t, ds, dsq.Query{
+			subtestQuery(t, keyType, ds, dsq.Query{
 				Filters: filters,
 			}, 100)
 		})
 	}
 	test(dsq.FilterKeyCompare{
 		Op:  dsq.Equal,
-		Key: key.QueryStrKey("/0key0"),
+		Key: key.QueryKeyFromTypeAndString(keyType, "/0key0"),
 	})
 
 	test(dsq.FilterKeyCompare{
 		Op:  dsq.LessThan,
-		Key: key.QueryStrKey("/2"),
+		Key: key.QueryKeyFromTypeAndString(keyType, "/2"),
 	})
 
 	test(&dsq.FilterKeyCompare{
 		Op:  dsq.Equal,
-		Key: key.QueryStrKey("/0key0"),
+		Key: key.QueryKeyFromTypeAndString(keyType, "/0key0"),
 	})
 
 	test(dsq.FilterKeyPrefix{
-		Prefix: key.QueryStrKey("/0key0"),
+		Prefix: key.QueryKeyFromTypeAndString(keyType, "/0key0"),
 	})
 
 	test(&dsq.FilterKeyPrefix{
-		Prefix: key.QueryStrKey("/0key0"),
+		Prefix: key.QueryKeyFromTypeAndString(keyType, "/0key0"),
 	})
 
 	test(dsq.FilterValueCompare{
@@ -362,15 +361,15 @@ func SubtestFilter(t *testing.T, ds dstore.Datastore) {
 	test(new(testFilter))
 }
 
-func SubtestReturnSizes(t *testing.T, ds dstore.Datastore) {
-	subtestQuery(t, ds, dsq.Query{ReturnsSizes: true}, 100)
+func SubtestReturnSizes(t *testing.T, keyType key.KeyType, ds dstore.Datastore) {
+	subtestQuery(t, keyType, ds, dsq.Query{ReturnsSizes: true}, 100)
 }
 
-func SubtestPrefix(t *testing.T, ds dstore.Datastore) {
+func SubtestPrefix(t *testing.T, keyType key.KeyType, ds dstore.Datastore) {
 	test := func(prefix string) {
 		t.Run(prefix, func(t *testing.T) {
-			subtestQuery(t, ds, dsq.Query{
-				Prefix: key.QueryStrKey(prefix),
+			subtestQuery(t, keyType, ds, dsq.Query{
+				Prefix: key.QueryKeyFromTypeAndString(keyType, prefix),
 			}, ElemCount)
 		})
 	}
@@ -394,11 +393,11 @@ func randValue() []byte {
 	return value
 }
 
-func subtestQuery(t *testing.T, ds dstore.Datastore, q dsq.Query, count int) {
+func subtestQuery(t *testing.T, keyType key.KeyType, ds dstore.Datastore, q dsq.Query, count int) {
 	var input []dsq.Entry
 	for i := 0; i < count; i++ {
 		s := fmt.Sprintf("%dkey%d", i, i)
-		key := key.NewStrKey(s)
+		key := key.NewKeyFromTypeAndString(keyType, s)
 		value := randValue()
 		input = append(input, dsq.Entry{
 			Key:   key,
@@ -409,7 +408,7 @@ func subtestQuery(t *testing.T, ds dstore.Datastore, q dsq.Query, count int) {
 
 	for i := 0; i < count; i++ {
 		s := fmt.Sprintf("/prefix/%dkey%d", i, i)
-		key := key.NewStrKey(s)
+		key := key.NewKeyFromTypeAndString(keyType, s)
 		value := randValue()
 		input = append(input, dsq.Entry{
 			Key:   key,
@@ -420,7 +419,7 @@ func subtestQuery(t *testing.T, ds dstore.Datastore, q dsq.Query, count int) {
 
 	for i := 0; i < count; i++ {
 		s := fmt.Sprintf("/prefix/sub/%dkey%d", i, i)
-		key := key.NewStrKey(s)
+		key := key.NewKeyFromTypeAndString(keyType, s)
 		value := randValue()
 		input = append(input, dsq.Entry{
 			Key:   key,
@@ -431,7 +430,7 @@ func subtestQuery(t *testing.T, ds dstore.Datastore, q dsq.Query, count int) {
 
 	for i := 0; i < count; i++ {
 		s := fmt.Sprintf("/capital/%dKEY%d", i, i)
-		key := key.NewStrKey(s)
+		key := key.NewKeyFromTypeAndString(keyType, s)
 		value := randValue()
 		input = append(input, dsq.Entry{
 			Key:   key,
@@ -489,7 +488,7 @@ func subtestQuery(t *testing.T, ds dstore.Datastore, q dsq.Query, count int) {
 		dsq.Sort([]dsq.Order{dsq.OrderByKey{}}, expected)
 	}
 	for i := range actual {
-		if actual[i].Key != expected[i].Key {
+		if !actual[i].Key.Equal(expected[i].Key) {
 			t.Errorf("for result %d, expected key %q, got %q", i, expected[i].Key, actual[i].Key)
 			continue
 		}

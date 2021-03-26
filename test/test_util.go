@@ -20,7 +20,7 @@ var (
 	TestError = errors.New("test error")
 )
 
-func RunBatchTest(t *testing.T, ds dstore.Batching) {
+func RunBatchTest(t *testing.T, keyType key.KeyType, ds dstore.Batching) {
 	batch, err := ds.Batch()
 	if err != nil {
 		t.Fatal(err)
@@ -33,7 +33,8 @@ func RunBatchTest(t *testing.T, ds dstore.Batching) {
 		rand.Read(blk)
 		blocks = append(blocks, blk)
 
-		key := key.NewStrKey(base32.StdEncoding.EncodeToString(blk[:8]))
+		key := key.NewKeyFromTypeAndString(keyType,
+			base32.StdEncoding.EncodeToString(blk[:8]))
 		keys = append(keys, key)
 
 		err := batch.Put(key, blk)
@@ -68,13 +69,14 @@ func RunBatchTest(t *testing.T, ds dstore.Batching) {
 	}
 }
 
-func RunBatchDeleteTest(t *testing.T, ds dstore.Batching) {
+func RunBatchDeleteTest(t *testing.T, keyType key.KeyType, ds dstore.Batching) {
 	var keys []key.Key
 	for i := 0; i < 20; i++ {
 		blk := make([]byte, 16)
 		rand.Read(blk)
 
-		key := key.NewStrKey(base32.StdEncoding.EncodeToString(blk[:8]))
+		key := key.NewKeyFromTypeAndString(keyType,
+			base32.StdEncoding.EncodeToString(blk[:8]))
 		keys = append(keys, key)
 
 		err := ds.Put(key, blk)
@@ -107,14 +109,14 @@ func RunBatchDeleteTest(t *testing.T, ds dstore.Batching) {
 	}
 }
 
-func RunBatchPutAndDeleteTest(t *testing.T, ds dstore.Batching) {
+func RunBatchPutAndDeleteTest(t *testing.T, keyType key.KeyType, ds dstore.Batching) {
 	batch, err := ds.Batch()
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	ka := key.NewStrKey("/a")
-	kb := key.NewStrKey("/b")
+	ka := key.NewKeyFromTypeAndString(keyType, "a")
+	kb := key.NewKeyFromTypeAndString(keyType, "b")
 
 	if err := batch.Put(ka, []byte{1}); err != nil {
 		t.Error(err)
@@ -190,8 +192,8 @@ func (d *testDatastore) CollectGarbage() error {
 	return nil
 }
 
-func NewMapDatastoreForTest(t *testing.T) *dstore.MapDatastore {
-	ds, err := dstore.NewMapDatastore(key.KeyTypeString)
+func NewMapDatastoreForTest(t *testing.T, keyType key.KeyType) *dstore.MapDatastore {
+	ds, err := dstore.NewMapDatastore(keyType)
 	if err != nil {
 		t.Fatal("error creating MapDatastore: ", err)
 	}
