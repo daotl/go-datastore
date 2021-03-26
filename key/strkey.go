@@ -85,12 +85,12 @@ func QueryStrKey(s string) StrKey {
 	return StrKey{s}
 }
 
-// Deprecated: NewKey just proxy calls to NewStrKey for backward compatibility.
+// Deprecated: NewKey just proxies calls to NewStrKey for backward compatibility.
 func NewKey(s string) StrKey {
 	return NewStrKey(s)
 }
 
-// Deprecated: RawKey just proxy calls to RawStrKey for backward compatibility.
+// Deprecated: RawKey just proxies calls to RawStrKey for backward compatibility.
 func RawKey(s string) StrKey {
 	return RawStrKey(s)
 }
@@ -447,12 +447,17 @@ func NamespaceValue(namespace string) string {
 	return parts[len(parts)-1]
 }
 
-func StrsToKeys(strs []string) []Key {
+func StrsToStrKeys(strs []string) []Key {
 	keys := make([]Key, len(strs))
 	for i, s := range strs {
 		keys[i] = NewStrKey(s)
 	}
 	return keys
+}
+
+// StrsToKeys is an alias that proxies calls to StrsToStrKeys for backwards compatibility.
+func StrsToKeys(strs []string) []Key {
+	return StrsToStrKeys(strs)
 }
 
 func StrsToQueryKeys(strs []string) []Key {

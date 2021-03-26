@@ -12,7 +12,7 @@ import (
 	key "github.com/daotl/go-datastore/key"
 )
 
-var sampleStrKeys = key.StrsToKeys([]string{
+var sampleStrKeys = key.StrsToStrKeys([]string{
 	"/ab/c",
 	"/ab/cd",
 	"/ab/ef",
@@ -71,7 +71,7 @@ func TestNaiveQueryApply(t *testing.T) {
 	}
 
 	q := Query{Limit: 2}
-	testNaiveQueryApply(t, q, sampleStrKeys, key.StrsToKeys([]string{
+	testNaiveQueryApply(t, q, sampleStrKeys, key.StrsToStrKeys([]string{
 		"/ab/c",
 		"/ab/cd",
 	}))
@@ -81,7 +81,7 @@ func TestNaiveQueryApply(t *testing.T) {
 	}))
 
 	q = Query{Offset: 3, Limit: 2}
-	testNaiveQueryApply(t, q, sampleStrKeys, key.StrsToKeys([]string{
+	testNaiveQueryApply(t, q, sampleStrKeys, key.StrsToStrKeys([]string{
 		"/ab/fg",
 		"/a",
 	}))
@@ -92,7 +92,7 @@ func TestNaiveQueryApply(t *testing.T) {
 
 	f := &FilterKeyCompare{Op: Equal, Key: key.QueryStrKey("/ab")}
 	q = Query{Filters: []Filter{f}}
-	testNaiveQueryApply(t, q, sampleStrKeys, key.StrsToKeys([]string{
+	testNaiveQueryApply(t, q, sampleStrKeys, key.StrsToStrKeys([]string{
 		"/ab",
 	}))
 	f = &FilterKeyCompare{Op: Equal, Key: key.NewBytesKeyFromString("ab")}
@@ -102,7 +102,7 @@ func TestNaiveQueryApply(t *testing.T) {
 	}))
 
 	q = Query{Prefix: key.QueryStrKey("/ab")}
-	testNaiveQueryApply(t, q, sampleStrKeys, key.StrsToKeys([]string{
+	testNaiveQueryApply(t, q, sampleStrKeys, key.StrsToStrKeys([]string{
 		"/ab/c",
 		"/ab/cd",
 		"/ab/ef",
@@ -119,7 +119,7 @@ func TestNaiveQueryApply(t *testing.T) {
 	}))
 
 	q = Query{Orders: []Order{OrderByKeyDescending{}}}
-	testNaiveQueryApply(t, q, sampleStrKeys, key.StrsToKeys([]string{
+	testNaiveQueryApply(t, q, sampleStrKeys, key.StrsToStrKeys([]string{
 		"/abcf",
 		"/abce",
 		"/ab/fg",
@@ -146,7 +146,7 @@ func TestNaiveQueryApply(t *testing.T) {
 		Prefix: key.QueryStrKey("/ab"),
 		Orders: []Order{OrderByKey{}},
 	}
-	testNaiveQueryApply(t, q, sampleStrKeys, key.StrsToKeys([]string{
+	testNaiveQueryApply(t, q, sampleStrKeys, key.StrsToStrKeys([]string{
 		"/ab/cd",
 		"/ab/ef",
 	}))
@@ -175,7 +175,7 @@ func TestLimit(t *testing.T) {
 		testResults(t, res, expect)
 	}
 
-	testKeyLimit(t, 0, sampleStrKeys, key.StrsToKeys([]string{ // none
+	testKeyLimit(t, 0, sampleStrKeys, key.StrsToStrKeys([]string{ // none
 		"/ab/c",
 		"/ab/cd",
 		"/ab/ef",
@@ -196,7 +196,7 @@ func TestLimit(t *testing.T) {
 		"ab",
 	}))
 
-	testKeyLimit(t, 10, sampleStrKeys, key.StrsToKeys([]string{ // large
+	testKeyLimit(t, 10, sampleStrKeys, key.StrsToStrKeys([]string{ // large
 		"/ab/c",
 		"/ab/cd",
 		"/ab/ef",
@@ -217,7 +217,7 @@ func TestLimit(t *testing.T) {
 		"ab",
 	}))
 
-	testKeyLimit(t, 2, sampleStrKeys, key.StrsToKeys([]string{
+	testKeyLimit(t, 2, sampleStrKeys, key.StrsToStrKeys([]string{
 		"/ab/c",
 		"/ab/cd",
 	}))
@@ -241,7 +241,7 @@ func TestOffset(t *testing.T) {
 		testResults(t, res, expect)
 	}
 
-	testOffset(t, 0, sampleStrKeys, key.StrsToKeys([]string{ // none
+	testOffset(t, 0, sampleStrKeys, key.StrsToStrKeys([]string{ // none
 		"/ab/c",
 		"/ab/cd",
 		"/ab/ef",
@@ -262,12 +262,12 @@ func TestOffset(t *testing.T) {
 		"ab",
 	}))
 
-	testOffset(t, 10, sampleStrKeys, key.StrsToKeys([]string{ // large
+	testOffset(t, 10, sampleStrKeys, key.StrsToStrKeys([]string{ // large
 	}))
 	testOffset(t, 10, sampleBytesKeys, key.StrsToBytesKeys([]string{ // large
 	}))
 
-	testOffset(t, 2, sampleStrKeys, key.StrsToKeys([]string{
+	testOffset(t, 2, sampleStrKeys, key.StrsToStrKeys([]string{
 		"/ab/ef",
 		"/ab/fg",
 		"/a",

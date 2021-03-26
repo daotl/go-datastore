@@ -60,7 +60,7 @@ func (ks *StrKeySuite) TestStrKeyBasic(c *C) {
 	mpds := dstest.NewTestDatastore(key.KeyTypeString, true)
 	ktds := kt.Wrap(mpds, strKeyPair)
 
-	keys := key.StrsToKeys([]string{
+	keys := key.StrsToStrKeys([]string{
 		"foo",
 		"foo/bar",
 		"foo/bar/baz",
@@ -195,7 +195,7 @@ func (ks *BytesKeySuite) TestBytesKeyBasic(c *C) {
 func TestSuiteStrKeyDefaultPair(t *testing.T) {
 	mpds := dstest.NewTestDatastore(key.KeyTypeString, true)
 	ktds := kt.Wrap(mpds, strKeyPair)
-	dstest.SubtestAll(t, ktds)
+	dstest.SubtestAll(t, key.KeyTypeString, ktds)
 }
 
 // TODO
@@ -208,7 +208,7 @@ func TestSuiteStrKeyDefaultPair(t *testing.T) {
 func TestSuiteStrKeyPrefixTransform(t *testing.T) {
 	mpds := dstest.NewTestDatastore(key.KeyTypeString, true)
 	ktds := kt.Wrap(mpds, kt.PrefixTransform{Prefix: key.NewStrKey("/foo")})
-	dstest.SubtestAll(t, ktds)
+	dstest.SubtestAll(t, key.KeyTypeString, ktds)
 }
 
 // TODO

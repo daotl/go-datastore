@@ -363,7 +363,7 @@ func TestQueryAcrossMountsWithSort(t *testing.T) {
 		t.Fatalf("Query Results.Rest fail: %v\n", err)
 	}
 
-	expect := key.StrsToKeys([]string{
+	expect := key.StrsToStrKeys([]string{
 		"/boo/3",
 		"/boo/5/hello",
 		"/boo/9",
@@ -430,7 +430,7 @@ func TestQueryLimitAcrossMountsWithSort(t *testing.T) {
 		t.Fatalf("Query Results.Rest fail: %v\n", err)
 	}
 
-	expect := key.StrsToKeys([]string{
+	expect := key.StrsToStrKeys([]string{
 		"/zoo/3",
 		"/zoo/2",
 	})
@@ -494,7 +494,7 @@ func TestQueryLimitAndOffsetAcrossMountsWithSort(t *testing.T) {
 		t.Fatalf("Query Results.Rest fail: %v\n", err)
 	}
 
-	expect := key.StrsToKeys([]string{
+	expect := key.StrsToStrKeys([]string{
 		"/rok/3",
 		"/zoo/0",
 		"/zoo/1",
@@ -560,7 +560,7 @@ func TestQueryFilterAcrossMountsWithSort(t *testing.T) {
 		t.Fatalf("Query Results.Rest fail: %v\n", err)
 	}
 
-	expect := key.StrsToKeys([]string{
+	expect := key.StrsToStrKeys([]string{
 		"/rok/3",
 	})
 

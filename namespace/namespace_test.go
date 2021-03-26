@@ -36,7 +36,7 @@ func (ks *DSSuite) testBasic(c *C, prefix string) {
 	mpds, _ := ds.NewMapDatastore(key.KeyTypeString)
 	nsds := ns.Wrap(mpds, key.NewStrKey(prefix))
 
-	keys := key.StrsToKeys([]string{
+	keys := key.StrsToStrKeys([]string{
 		"foo",
 		"foo/bar",
 		"foo/bar/baz",
@@ -89,7 +89,7 @@ func (ks *DSSuite) TestQuery(c *C) {
 	mpds := dstest.NewTestDatastore(key.KeyTypeString, true)
 	nsds := ns.Wrap(mpds, key.NewStrKey("/foo"))
 
-	keys := key.StrsToKeys([]string{
+	keys := key.StrsToStrKeys([]string{
 		"abc/foo",
 		"bar/foo",
 		"foo/bar",

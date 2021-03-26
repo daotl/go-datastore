@@ -41,8 +41,8 @@ func testKeyFilter(t *testing.T, f Filter, keys []key.Key, expect key.KeySlice) 
 func TestFilterKeyCompare(t *testing.T) {
 
 	// StrKey
-	testKeyFilter(t, FilterKeyCompare{Equal, key.QueryStrKey("/ab")}, sampleStrKeys, key.StrsToKeys([]string{"/ab"}))
-	testKeyFilter(t, FilterKeyCompare{GreaterThan, key.QueryStrKey("/ab")}, sampleStrKeys, key.StrsToKeys([]string{
+	testKeyFilter(t, FilterKeyCompare{Equal, key.QueryStrKey("/ab")}, sampleStrKeys, key.StrsToStrKeys([]string{"/ab"}))
+	testKeyFilter(t, FilterKeyCompare{GreaterThan, key.QueryStrKey("/ab")}, sampleStrKeys, key.StrsToStrKeys([]string{
 		"/ab/c",
 		"/ab/cd",
 		"/ab/ef",
@@ -50,7 +50,7 @@ func TestFilterKeyCompare(t *testing.T) {
 		"/abce",
 		"/abcf",
 	}))
-	testKeyFilter(t, FilterKeyCompare{LessThanOrEqual, key.QueryStrKey("/ab")}, sampleStrKeys, key.StrsToKeys([]string{
+	testKeyFilter(t, FilterKeyCompare{LessThanOrEqual, key.QueryStrKey("/ab")}, sampleStrKeys, key.StrsToStrKeys([]string{
 		"/a",
 		"/ab",
 	}))
@@ -74,7 +74,7 @@ func TestFilterKeyCompare(t *testing.T) {
 func TestFilterKeyPrefix(t *testing.T) {
 
 	// StrKey
-	testKeyFilter(t, FilterKeyPrefix{key.QueryStrKey("/a")}, sampleStrKeys, key.StrsToKeys([]string{
+	testKeyFilter(t, FilterKeyPrefix{key.QueryStrKey("/a")}, sampleStrKeys, key.StrsToStrKeys([]string{
 		"/ab/c",
 		"/ab/cd",
 		"/ab/ef",
@@ -83,7 +83,7 @@ func TestFilterKeyPrefix(t *testing.T) {
 		"/abcf",
 		"/ab",
 	}))
-	testKeyFilter(t, FilterKeyPrefix{key.QueryStrKey("/ab/")}, sampleStrKeys, key.StrsToKeys([]string{
+	testKeyFilter(t, FilterKeyPrefix{key.QueryStrKey("/ab/")}, sampleStrKeys, key.StrsToStrKeys([]string{
 		"/ab/c",
 		"/ab/cd",
 		"/ab/ef",
@@ -113,7 +113,7 @@ func TestFilterKeyPrefix(t *testing.T) {
 func TestFilterKeyRange(t *testing.T) {
 
 	// StrKey
-	testKeyFilter(t, FilterKeyRange{Range{key.QueryStrKey("/ab/c"), nil}}, sampleStrKeys, key.StrsToKeys([]string{
+	testKeyFilter(t, FilterKeyRange{Range{key.QueryStrKey("/ab/c"), nil}}, sampleStrKeys, key.StrsToStrKeys([]string{
 		"/ab/c",
 		"/ab/cd",
 		"/ab/ef",
@@ -121,14 +121,14 @@ func TestFilterKeyRange(t *testing.T) {
 		"/abce",
 		"/abcf",
 	}))
-	testKeyFilter(t, FilterKeyRange{Range{nil, key.QueryStrKey("/ab/fg")}}, sampleStrKeys, key.StrsToKeys([]string{
+	testKeyFilter(t, FilterKeyRange{Range{nil, key.QueryStrKey("/ab/fg")}}, sampleStrKeys, key.StrsToStrKeys([]string{
 		"/ab/c",
 		"/ab/cd",
 		"/ab/ef",
 		"/a",
 		"/ab",
 	}))
-	testKeyFilter(t, FilterKeyRange{Range{key.QueryStrKey("/ab/c"), key.QueryStrKey("/ab/fg")}}, sampleStrKeys, key.StrsToKeys([]string{
+	testKeyFilter(t, FilterKeyRange{Range{key.QueryStrKey("/ab/c"), key.QueryStrKey("/ab/fg")}}, sampleStrKeys, key.StrsToStrKeys([]string{
 		"/ab/c",
 		"/ab/cd",
 		"/ab/ef",

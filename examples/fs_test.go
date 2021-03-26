@@ -42,7 +42,7 @@ func (ks *DSSuite) TestOpen(c *C) {
 
 func (ks *DSSuite) TestBasic(c *C) {
 
-	keys := key.StrsToKeys([]string{
+	keys := key.StrsToStrKeys([]string{
 		"foo",
 		"foo/bar",
 		"foo/bar/baz",
@@ -67,7 +67,7 @@ func (ks *DSSuite) TestBasic(c *C) {
 		c.Check(err, Equals, nil)
 	}
 
-	expect := key.StrsToKeys([]string{
+	expect := key.StrsToStrKeys([]string{
 		"/foo/bar/baz",
 		"/foo/bar/bazb",
 		"/foo/bar/baz/barb",
@@ -93,7 +93,7 @@ func (ks *DSSuite) TestBasic(c *C) {
 }
 
 func (ks *DSSuite) TestDiskUsage(c *C) {
-	keys := key.StrsToKeys([]string{
+	keys := key.StrsToStrKeys([]string{
 		"foo",
 		"foo/bar",
 		"foo/bar/baz",

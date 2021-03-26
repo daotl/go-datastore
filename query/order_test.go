@@ -43,7 +43,7 @@ func testKeyOrder(t *testing.T, f Order, keys []key.Key, expect key.KeySlice) {
 func TestOrderByKey(t *testing.T) {
 
 	// StrKey
-	testKeyOrder(t, OrderByKey{}, sampleStrKeys, key.StrsToKeys([]string{
+	testKeyOrder(t, OrderByKey{}, sampleStrKeys, key.StrsToStrKeys([]string{
 		"/a",
 		"/ab",
 		"/ab/c",
@@ -53,7 +53,7 @@ func TestOrderByKey(t *testing.T) {
 		"/abce",
 		"/abcf",
 	}))
-	testKeyOrder(t, OrderByKeyDescending{}, sampleStrKeys, key.StrsToKeys([]string{
+	testKeyOrder(t, OrderByKeyDescending{}, sampleStrKeys, key.StrsToStrKeys([]string{
 		"/abcf",
 		"/abce",
 		"/ab/fg",
