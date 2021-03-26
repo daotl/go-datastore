@@ -52,14 +52,14 @@ func (ks *DSSuite) TestBasic(c *C) {
 	})
 
 	for _, k := range keys {
-		err := ks.ds.Put(k, []byte(k.String()))
+		err := ks.ds.Put(k, k.Bytes())
 		c.Check(err, Equals, nil)
 	}
 
 	for _, k := range keys {
 		v, err := ks.ds.Get(k)
 		c.Check(err, Equals, nil)
-		c.Check(bytes.Equal(v, []byte(k.String())), Equals, true)
+		c.Check(bytes.Equal(v, k.Bytes()), Equals, true)
 	}
 
 	r, err := ks.ds.Query(query.Query{Prefix: key.QueryStrKey("/foo/bar/")})
@@ -104,7 +104,7 @@ func (ks *DSSuite) TestDiskUsage(c *C) {
 
 	totalBytes := 0
 	for _, k := range keys {
-		value := []byte(k.String())
+		value := k.Bytes()
 		totalBytes += len(value)
 		err := ks.ds.Put(k, value)
 		c.Check(err, Equals, nil)

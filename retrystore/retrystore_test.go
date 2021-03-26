@@ -18,10 +18,11 @@ import (
 func TestRetryFailure(t *testing.T) {
 	myErr := fmt.Errorf("this is an actual error")
 	var count int
-	fstore := failstore.NewFailstore(dstest.NewMapDatastoreForTest(t), func(op string) error {
-		count++
-		return myErr
-	})
+	fstore := failstore.NewFailstore(dstest.NewMapDatastoreForTest(t, key.KeyTypeString),
+		func(op string) error {
+			count++
+			return myErr
+		})
 
 	rds := &Datastore{
 		Batching: fstore,
@@ -49,9 +50,10 @@ func TestRetryFailure(t *testing.T) {
 
 func TestRealErrorGetsThrough(t *testing.T) {
 	myErr := fmt.Errorf("this is an actual error")
-	fstore := failstore.NewFailstore(dstest.NewMapDatastoreForTest(t), func(op string) error {
-		return myErr
-	})
+	fstore := failstore.NewFailstore(dstest.NewMapDatastoreForTest(t, key.KeyTypeString),
+		func(op string) error {
+			return myErr
+		})
 
 	rds := &Datastore{
 		Batching: fstore,
@@ -82,14 +84,15 @@ func TestRealErrorAfterTemp(t *testing.T) {
 	myErr := fmt.Errorf("this is an actual error")
 	tempErr := fmt.Errorf("this is a temp error")
 	var count int
-	fstore := failstore.NewFailstore(dstest.NewMapDatastoreForTest(t), func(op string) error {
-		count++
-		if count < 3 {
-			return tempErr
-		}
+	fstore := failstore.NewFailstore(dstest.NewMapDatastoreForTest(t, key.KeyTypeString),
+		func(op string) error {
+			count++
+			if count < 3 {
+				return tempErr
+			}
 
-		return myErr
-	})
+			return myErr
+		})
 
 	rds := &Datastore{
 		Batching: fstore,
@@ -109,14 +112,15 @@ func TestRealErrorAfterTemp(t *testing.T) {
 func TestSuccessAfterTemp(t *testing.T) {
 	tempErr := fmt.Errorf("this is a temp error")
 	var count int
-	fstore := failstore.NewFailstore(dstest.NewMapDatastoreForTest(t), func(op string) error {
-		count++
-		if count < 3 {
-			return tempErr
-		}
-		count = 0
-		return nil
-	})
+	fstore := failstore.NewFailstore(dstest.NewMapDatastoreForTest(t, key.KeyTypeString),
+		func(op string) error {
+			count++
+			if count < 3 {
+				return tempErr
+			}
+			count = 0
+			return nil
+		})
 
 	rds := &Datastore{
 		Batching: fstore,

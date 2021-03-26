@@ -27,7 +27,8 @@ var (
 )
 
 // Mount defines a datastore mount. It mounts the given datastore at the given
-// prefix.
+// prefix. Be cautious that for BytesKey prefix datastore mounted at 'fo' will
+// contains values from datastore mounted at 'foo.
 type Mount struct {
 	Prefix    key.Key
 	Datastore ds.Datastore

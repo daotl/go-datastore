@@ -16,11 +16,12 @@ import (
 )
 
 func TestAutobatch(t *testing.T) {
-	dstest.SubtestAll(t, NewAutoBatching(dstest.NewMapDatastoreForTest(t), 16))
+	dstest.SubtestAll(t, key.KeyTypeString,
+		NewAutoBatching(dstest.NewMapDatastoreForTest(t, key.KeyTypeString), 16))
 }
 
 func TestFlushing(t *testing.T) {
-	child := dstest.NewMapDatastoreForTest(t)
+	child := dstest.NewMapDatastoreForTest(t, key.KeyTypeString)
 	d := NewAutoBatching(child, 16)
 
 	var keys []key.Key
@@ -111,11 +112,11 @@ func TestFlushing(t *testing.T) {
 }
 
 func TestSync(t *testing.T) {
-	child := dstest.NewMapDatastoreForTest(t)
+	child := dstest.NewMapDatastoreForTest(t, key.KeyTypeString)
 	d := NewAutoBatching(child, 100)
 
 	put := func(key key.Key) {
-		if err := d.Put(key, []byte(key.String())); err != nil {
+		if err := d.Put(key, key.Bytes()); err != nil {
 			t.Fatal(err)
 		}
 	}
@@ -131,7 +132,7 @@ func TestSync(t *testing.T) {
 			t.Fatal(err)
 		}
 
-		if !bytes.Equal(val, []byte(key.String())) {
+		if !bytes.Equal(val, key.Bytes()) {
 			t.Fatal("wrong value")
 		}
 	}

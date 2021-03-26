@@ -8,9 +8,11 @@ package sync
 import (
 	"testing"
 
+	"github.com/daotl/go-datastore/key"
 	dstest "github.com/daotl/go-datastore/test"
 )
 
 func TestSync(t *testing.T) {
-	dstest.SubtestAll(t, MutexWrap(dstest.NewMapDatastoreForTest(t)))
+	dstest.SubtestAll(t, key.KeyTypeString,
+		MutexWrap(dstest.NewMapDatastoreForTest(t, key.KeyTypeString)))
 }

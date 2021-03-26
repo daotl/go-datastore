@@ -46,18 +46,18 @@ func (ks *DSSuite) testBasic(c *C, prefix string) {
 	})
 
 	for _, k := range keys {
-		err := nsds.Put(k, []byte(k.String()))
+		err := nsds.Put(k, k.Bytes())
 		c.Check(err, Equals, nil)
 	}
 
 	for _, k := range keys {
 		v1, err := nsds.Get(k)
 		c.Check(err, Equals, nil)
-		c.Check(bytes.Equal(v1, []byte(k.String())), Equals, true)
+		c.Check(bytes.Equal(v1, k.Bytes()), Equals, true)
 
 		v2, err := mpds.Get(key.NewStrKey(prefix).Child(k))
 		c.Check(err, Equals, nil)
-		c.Check(bytes.Equal(v2, []byte(k.String())), Equals, true)
+		c.Check(bytes.Equal(v2, k.Bytes()), Equals, true)
 	}
 
 	run := func(d ds.Datastore, q dsq.Query) []key.Key {
@@ -99,7 +99,7 @@ func (ks *DSSuite) TestQuery(c *C) {
 	})
 
 	for _, k := range keys {
-		err := mpds.Put(k, []byte(k.String()))
+		err := mpds.Put(k, k.Bytes())
 		c.Check(err, Equals, nil)
 	}
 
@@ -156,5 +156,5 @@ func (ks *DSSuite) TestQuery(c *C) {
 func TestSuite(t *testing.T) {
 	mpds := dstest.NewTestDatastore(key.KeyTypeString, true)
 	nsds := ns.Wrap(mpds, key.NewStrKey("/foo"))
-	dstest.SubtestAll(t, nsds)
+	dstest.SubtestAll(t, key.KeyTypeString, nsds)
 }

@@ -16,7 +16,7 @@ import (
 )
 
 func TestDelayed(t *testing.T) {
-	d := New(dstest.NewMapDatastoreForTest(t), delay.Fixed(time.Second))
+	d := New(dstest.NewMapDatastoreForTest(t, key.KeyTypeString), delay.Fixed(time.Second))
 	now := time.Now()
 	k := key.NewStrKey("test")
 	err := d.Put(k, []byte("value"))
@@ -37,5 +37,5 @@ func TestDelayedAll(t *testing.T) {
 	if err != nil {
 		t.Fatal("error creating MapDatastore: ", err)
 	}
-	dstest.SubtestAll(t, New(ds, delay.Fixed(time.Millisecond)))
+	dstest.SubtestAll(t, key.KeyTypeString, New(ds, delay.Fixed(time.Millisecond)))
 }
