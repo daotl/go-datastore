@@ -198,22 +198,19 @@ func TestSuiteStrKeyDefaultPair(t *testing.T) {
 	dstest.SubtestAll(t, key.KeyTypeString, ktds)
 }
 
-// TODO
-//func TestSuiteBytesKeyDefaultPair(t *testing.T) {
-//	mpds := dstest.NewTestDatastore(key.KeyTypeBytes, true)
-//	ktds := kt.Wrap(mpds, bytesKeyPair)
-//	dstest.SubtestAll(t, ktds)
-//}
-
-func TestSuiteStrKeyPrefixTransform(t *testing.T) {
-	mpds := dstest.NewTestDatastore(key.KeyTypeString, true)
-	ktds := kt.Wrap(mpds, kt.PrefixTransform{Prefix: key.NewStrKey("/foo")})
-	dstest.SubtestAll(t, key.KeyTypeString, ktds)
+func TestSuiteBytesKeyDefaultPair(t *testing.T) {
+	mpds := dstest.NewTestDatastore(key.KeyTypeBytes, true)
+	ktds := kt.Wrap(mpds, bytesKeyPair)
+	dstest.SubtestAll(t, key.KeyTypeBytes, ktds)
 }
 
-// TODO
-//func TestSuiteBytesKeyPrefixTransform(t *testing.T) {
-//	mpds := dstest.NewTestDatastore(key.KeyTypeBytes, true)
-//	ktds := kt.Wrap(mpds, kt.PrefixTransform{Prefix: key.NewBytesKeyFromString("foo")})
-//	dstest.SubtestAll(t, ktds)
-//}
+func testSuiteStrKeyPrefixTransform(t *testing.T, keyType key.KeyType) {
+	mpds := dstest.NewTestDatastore(keyType, true)
+	ktds := kt.Wrap(mpds, kt.PrefixTransform{Prefix: key.NewKeyFromTypeAndString(keyType, "foo")})
+	dstest.SubtestAll(t, keyType, ktds)
+}
+
+func TestSuiteBytesKeyPrefixTransform(t *testing.T) {
+	testSuiteStrKeyPrefixTransform(t, key.KeyTypeString)
+	testSuiteStrKeyPrefixTransform(t, key.KeyTypeBytes)
+}

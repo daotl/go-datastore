@@ -47,8 +47,7 @@ func (p PrefixTransform) InvertKey(k key.Key) key.Key {
 		panic("expected prefix not found")
 	}
 
-	s := k.String()[len(p.Prefix.String()):]
-	return key.RawStrKey(s)
+	return k.TrimPrefix(p.Prefix)
 }
 
 var _ KeyTransform = (*PrefixTransform)(nil)
