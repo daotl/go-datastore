@@ -7,14 +7,18 @@ import (
 	"bytes"
 	"encoding/json"
 	"errors"
+	"reflect"
 	"strings"
+	"unsafe"
 
 	"github.com/google/uuid"
 )
 
 var ErrNotBytesKey = errors.New("argument is not of type BytesKey")
 
-// BytesKey is a Key implementation backed by byte slice.
+// BytesKey is a Key implementation backed by byte slice. It could improve
+// performance in some cases compared to StrKey by preventing type conversion
+// and reducing key size.
 type BytesKey struct {
 	bytes []byte
 }
@@ -24,10 +28,21 @@ func NewBytesKey(b []byte) BytesKey {
 	return BytesKey{b}
 }
 
-// NewBytesKeyFromString constructs a BytesKey from string.
+// NewBytesKeyFromString constructs a BytesKey from s.
 func NewBytesKeyFromString(s string) BytesKey {
 	k := BytesKey{[]byte(s)}
 	return k
+}
+
+// NewBytesKeyFromStringUnsafe constructs a BytesKey from `s` using "unsafe"
+// package to avoid copying. Be cautious that `s` should be discarded right
+// after calling this method because its value may change.
+func NewBytesKeyFromStringUnsafe(s string) BytesKey {
+	// Method from: https://stackoverflow.com/a/66218124
+	var bs = *(*[]byte)(unsafe.Pointer(&s))
+	(*reflect.SliceHeader)(unsafe.Pointer(&bs)).Cap = len(s)
+
+	return BytesKey{bs}
 }
 
 // KeyWithNamespaces constructs a key out of a namespace slice.
@@ -35,18 +50,34 @@ func BytesKeyWithNamespaces(ns [][]byte) BytesKey {
 	return BytesKey{bytes.Join(ns, nil)}
 }
 
-// Strings is the string value of Key
-func (k BytesKey) String() string {
-	return string(k.bytes)
-}
-
 // KeyType returns the key type (KeyTypeBytes)
 func (k BytesKey) KeyType() KeyType {
 	return KeyTypeBytes
 }
 
-// Bytes returns the string value of Key as a []byte
+// String gets the string value of Key
+func (k BytesKey) String() string {
+	return string(k.bytes)
+}
+
+// StringUnsafe gets the string value of Key using "unsafe" package to avoid
+// copying. Be cautious that the string returned may change if the underlying
+// byte slice is modified elsewhere, e.g. after being returned from BytesUnsafe.
+func (k BytesKey) StringUnsafe() string {
+	// Method from: https://github.com/golang/go/issues/25484#issuecomment-391415660
+	return *(*string)(unsafe.Pointer(&k.bytes))
+}
+
+// Bytes returns a copy of the underlying byte slice of Key.
 func (k BytesKey) Bytes() []byte {
+	bs := make([]byte, len(k.bytes))
+	copy(bs, k.bytes)
+	return bs
+}
+
+// Bytes returns the underlying byte slice of Key. You should probably not
+// modify the returned byte slice as it may have unintended side effects.
+func (k BytesKey) BytesUnsafe() []byte {
 	return k.bytes
 }
 
@@ -149,7 +180,7 @@ func (k BytesKey) HasSuffix(suffix Key) bool {
 }
 
 // TrimPrefix returns a new key equals to this key without the provided leading prefix key.
-// If s doesn't start with prefix, this key is returned unchanged.
+// If `s` doesn't start with prefix, this key is returned unchanged.
 // Panic if `prefix` is not a BytesKey.
 func (k BytesKey) TrimPrefix(prefix Key) Key {
 	if prefix == nil {
@@ -162,7 +193,7 @@ func (k BytesKey) TrimPrefix(prefix Key) Key {
 }
 
 // TrimSuffix returns a new key equals to this key without the provided trailing suffix key.
-// If s doesn't end with suffix, this key is returned unchanged.
+// If `s` doesn't end with suffix, this key is returned unchanged.
 // Panic if `suffix` is not a BytesKey.
 func (k BytesKey) TrimSuffix(suffix Key) Key {
 	if suffix == nil {

@@ -19,11 +19,17 @@ const (
 	KeyTypeString KeyType = iota
 	// Key backed by byte slice
 	KeyTypeBytes
+	maxKeyType
 )
 
 var (
 	ErrKeyTypeNotSupported = errors.New("key type not supported")
 )
+
+// Available reports whether the given key type is avialable.
+func (h KeyType) Available() bool {
+	return h < maxKeyType
+}
 
 /*
 A Key represents the unique identifier of an object.
@@ -33,17 +39,23 @@ StrKey backed by string and BytesKey backed by byte slice.
 */
 type Key interface {
 	fmt.Stringer
-	// KeyType returns the key type
+	// KeyType returns the key type.
 	KeyType() KeyType
-	// Bytes returns the string value of Key as a []byte
+	// StringUnsafe returns the string value of Key.
+	// It's the same as String for StrKey.
+	StringUnsafe() string
+	// Bytes returns the value of Key as a []byte.
 	Bytes() []byte
-	// Equal checks equality of two keys
+	// Bytes returns the value of Key as a []byte. You should probably not
+	// modify the returned byte slice as it may have unintended side effects.
+	BytesUnsafe() []byte
+	// Equal checks equality of two keys.
 	Equal(k2 Key) bool
 	// Less checks whether this key is sorted lower than another.
 	Less(k2 Key) bool
 	// Child returns the `child` Key of this Key.
 	Child(k2 Key) Key
-	// IsAncestorOf returns whether this key is a prefix of `other`
+	// IsAncestorOf returns whether this key is a prefix of `other`.
 	IsAncestorOf(other Key) bool
 	// IsDescendantOf returns whether this key contains another as a prefix (excluding equals).
 	IsDescendantOf(other Key) bool
@@ -58,7 +70,7 @@ type Key interface {
 	// If s doesn't end with suffix, this key is returned unchanged.
 	TrimSuffix(suffix Key) Key
 	// MarshalJSON implements the json.Marshaler interface,
-	// keys are represented as JSON strings
+	// keys are represented as JSON strings.
 	MarshalJSON() ([]byte, error)
 }
 

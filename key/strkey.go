@@ -9,7 +9,9 @@ import (
 	"encoding/json"
 	"errors"
 	"path"
+	"reflect"
 	"strings"
+	"unsafe"
 
 	"github.com/google/uuid"
 )
@@ -110,19 +112,35 @@ func (k *StrKey) Clean() {
 	}
 }
 
-// Strings is the string value of Key
-func (k StrKey) String() string {
-	return k.string
-}
-
 // KeyType returns the key type (KeyTypeString)
 func (k StrKey) KeyType() KeyType {
 	return KeyTypeString
 }
 
-// Bytes returns the string value of Key as a []byte
+// String returns the string value of Key
+func (k StrKey) String() string {
+	return k.string
+}
+
+// StringUnsafe is the same as String
+func (k StrKey) StringUnsafe() string {
+	return k.string
+}
+
+// Bytes gets the value of Key as a []byte
 func (k StrKey) Bytes() []byte {
 	return []byte(k.string)
+}
+
+// BytesUnsafe gets the value of Key as a []byte using "unsafe" package to
+// avoid copying. You should probably not modify the returned byte slice as
+// it may have unintended side effects.
+func (k StrKey) BytesUnsafe() []byte {
+	// Method from: https://stackoverflow.com/a/66218124
+	var bs = *(*[]byte)(unsafe.Pointer(&k.string))
+	(*reflect.SliceHeader)(unsafe.Pointer(&bs)).Cap = len(k.string)
+
+	return bs
 }
 
 // Equal checks equality of two keys
