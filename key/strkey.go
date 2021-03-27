@@ -16,7 +16,11 @@ import (
 	"github.com/google/uuid"
 )
 
-var ErrNotStrKey = errors.New("argument is not of type StrKey")
+var (
+	EmptyStrKey   = RawStrKey("/")
+
+	ErrNotStrKey = errors.New("argument is not of type StrKey")
+)
 
 /*
 A StrKey represents the unique identifier of an object.
@@ -250,7 +254,7 @@ func (k StrKey) Path() Key {
 func (k StrKey) Parent() StrKey {
 	n := k.List()
 	if len(n) == 1 {
-		return RawStrKey("/")
+		return EmptyStrKey
 	}
 	return NewStrKey(strings.Join(n[:len(n)-1], "/"))
 }

@@ -99,7 +99,7 @@ func Open(driver string, location string, cleanup bool) (*RunState, error) {
 	if state.TxnDB() == nil {
 		state.opMax = opNewTX
 	}
-	state.keyCache[0] = key.NewStrKey("/")
+	state.keyCache[0] = key.EmptyStrKey
 	state.cachedKeys = 1
 
 	state.wg.Add(Threads)

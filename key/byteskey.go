@@ -14,7 +14,11 @@ import (
 	"github.com/google/uuid"
 )
 
-var ErrNotBytesKey = errors.New("argument is not of type BytesKey")
+var (
+	EmptyBytesKey = NewBytesKey([]byte{})
+
+	ErrNotBytesKey = errors.New("argument is not of type BytesKey")
+)
 
 // BytesKey is a Key implementation backed by byte slice. It could improve
 // performance in some cases compared to StrKey by preventing type conversion

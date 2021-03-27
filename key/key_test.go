@@ -253,7 +253,7 @@ func TestStrKeyMarshalJSON(t *testing.T) {
 		}
 
 		if c.err == "" {
-			key := NewStrKey("")
+			key := EmptyStrKey
 			if err := key.UnmarshalJSON(out); err != nil {
 				t.Errorf("case %d error parsing key from json output: %s", i, err.Error())
 			}

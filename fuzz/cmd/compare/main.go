@@ -78,7 +78,7 @@ func main() {
 		if r.Error != nil {
 			break
 		}
-		if r.Entry.Key.Equal(key.NewStrKey("/")) {
+		if r.Entry.Key.Equal(key.EmptyStrKey) {
 			continue
 		}
 
@@ -96,7 +96,7 @@ func main() {
 		if r.Error != nil {
 			break
 		}
-		if r.Entry.Key.Equal(key.NewStrKey("/")) {
+		if r.Entry.Key.Equal(key.EmptyStrKey) {
 			continue
 		}
 

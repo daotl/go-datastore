@@ -86,6 +86,20 @@ func NewKeyFromTypeAndString(keyType KeyType, s string) Key {
 	}
 }
 
+// EmptyKeyFromType returns the empty key of keyType.
+// for StrKey:		RawStrKey("/")
+// for BytesKey:	NewBytesKey([]byte{})
+func EmptyKeyFromType(keyType KeyType) Key {
+	switch keyType {
+	case KeyTypeString:
+		return EmptyStrKey
+	case KeyTypeBytes:
+		return EmptyBytesKey
+	default:
+		panic(ErrKeyTypeNotSupported)
+	}
+}
+
 func QueryKeyFromTypeAndString(keyType KeyType, s string) Key {
 	switch keyType {
 	case KeyTypeString:
@@ -165,10 +179,10 @@ func (p KeySlice) Less(i, j int) bool { return p[i].Less(p[j]) }
 func (p KeySlice) Swap(i, j int)      { p[i], p[j] = p[j], p[i] }
 
 // Join Joins keys in the KeySlice into a single key,
-// returns NewStrKey("") if slice is empty.
+// returns EmptyStrKey if slice is empty.
 func (p KeySlice) Join() Key {
 	if len(p) == 0 {
-		return NewStrKey("")
+		return EmptyStrKey
 	}
 	key := p[0]
 	for _, k := range p[1:] {

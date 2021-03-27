@@ -78,7 +78,7 @@ func main() {
 	reader := validatingReader{dat, 0, func(verbose bool) bool {
 		res, _ := replayDB.DB().Query(dsq.Query{})
 		for e := range res.Next() {
-			if e.Key.Equal(key.NewStrKey("/")) {
+			if e.Key.Equal(key.EmptyStrKey) {
 				continue
 			}
 			if h, _ := previousDB.DB().Has(e.Entry.Key); !h {
@@ -91,7 +91,7 @@ func main() {
 		// next; make sure the other way is equal.
 		res, _ = previousDB.DB().Query(dsq.Query{})
 		for e := range res.Next() {
-			if e.Key.Equal(key.NewStrKey("/")) {
+			if e.Key.Equal(key.EmptyStrKey) {
 				continue
 			}
 			if h, _ := replayDB.DB().Has(e.Entry.Key); !h {

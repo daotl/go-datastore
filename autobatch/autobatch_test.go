@@ -224,7 +224,7 @@ func internalSyncTest(t *testing.T, d, child ds.Datastore, op, undoOp func(key.K
 	// Verify no other keys were synchronized
 	checkKeyRange(t, keymap, keys, child, [][]string{{"1", "1/0/1"}, {"2", "3/1/0"}}, checkUndoOp)
 
-	if err := d.Sync(key.NewStrKey("")); err != nil {
+	if err := d.Sync(key.EmptyStrKey); err != nil {
 		t.Fatal(err)
 	}
 

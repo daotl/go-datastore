@@ -224,7 +224,7 @@ func SubtestBasicSync(t *testing.T, keyType key.KeyType, ds dstore.Datastore) {
 		t.Fatal(err)
 	}
 
-	if err := ds.Sync(key.NewKeyFromTypeAndString(keyType, "")); err != nil {
+	if err := ds.Sync(key.EmptyKeyFromType(keyType)); err != nil {
 		t.Fatal(err)
 	}
 }
