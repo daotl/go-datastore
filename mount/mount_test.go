@@ -18,40 +18,49 @@ import (
 	dstest "github.com/daotl/go-datastore/test"
 )
 
-// TODO: Tests for BytesKey
-
-func TestPutBadNothing(t *testing.T) {
+func testPutBadNothing(t *testing.T, keyType key.KeyType) {
 	m := mount.New(nil)
 
-	err := m.Put(key.NewStrKey("quux"), []byte("foobar"))
+	err := m.Put(key.NewKeyFromTypeAndString(keyType, "quux"), []byte("foobar"))
 	if g, e := err, mount.ErrNoMount; g != e {
 		t.Fatalf("Put got wrong error: %v != %v", g, e)
 	}
 }
 
-func TestPutBadNoMount(t *testing.T) {
-	mapds := dstest.NewMapDatastoreForTest(t, key.KeyTypeString)
+func TestPutBadNothing(t *testing.T) {
+	testPutBadNothing(t, key.KeyTypeString)
+	testPutBadNothing(t, key.KeyTypeBytes)
+}
+
+func testPutBadNoMount(t *testing.T, keyType key.KeyType) {
+	mapds := dstest.NewMapDatastoreForTest(t, keyType)
 	m := mount.New([]mount.Mount{
-		{Prefix: key.NewStrKey("/redherring"), Datastore: mapds},
+		{Prefix: key.NewKeyFromTypeAndString(keyType, "/redherring"), Datastore: mapds},
 	})
 
-	err := m.Put(key.NewStrKey("/quux/thud"), []byte("foobar"))
+	err := m.Put(key.NewKeyFromTypeAndString(keyType, "/quux/thud"), []byte("foobar"))
 	if g, e := err, mount.ErrNoMount; g != e {
 		t.Fatalf("expected ErrNoMount, got: %v\n", g)
 	}
 }
 
-func TestPut(t *testing.T) {
-	mapds := dstest.NewMapDatastoreForTest(t, key.KeyTypeString)
+func TestPutBadNoMount(t *testing.T) {
+	testPutBadNoMount(t, key.KeyTypeString)
+	testPutBadNoMount(t, key.KeyTypeBytes)
+}
+
+func testPut(t *testing.T, keyType key.KeyType) {
+	mapds := dstest.NewMapDatastoreForTest(t, keyType)
 	m := mount.New([]mount.Mount{
-		{Prefix: key.NewStrKey("/quux"), Datastore: mapds},
+		{Prefix: key.NewKeyFromTypeAndString(keyType, "/quux"), Datastore: mapds},
 	})
 
-	if err := m.Put(key.NewStrKey("/quux/thud"), []byte("foobar")); err != nil {
+	if err := m.Put(key.NewKeyFromTypeAndString(keyType, "/quux/thud"),
+		[]byte("foobar")); err != nil {
 		t.Fatalf("Put error: %v", err)
 	}
 
-	buf, err := mapds.Get(key.NewStrKey("/thud"))
+	buf, err := mapds.Get(key.NewKeyFromTypeAndString(keyType, "/thud"))
 	if err != nil {
 		t.Fatalf("Get error: %v", err)
 	}
@@ -60,50 +69,71 @@ func TestPut(t *testing.T) {
 	}
 }
 
-func TestGetBadNothing(t *testing.T) {
+func TestPut(t *testing.T) {
+	testPut(t, key.KeyTypeString)
+	testPut(t, key.KeyTypeBytes)
+}
+
+func testGetBadNothing(t *testing.T, keyType key.KeyType) {
 	m := mount.New([]mount.Mount{})
 
-	_, err := m.Get(key.NewStrKey("/quux/thud"))
+	_, err := m.Get(key.NewKeyFromTypeAndString(keyType, "/quux/thud"))
+	if g, e := err, datastore.ErrNotFound; g != e {
+		t.Fatalf("expected ErrNotFound, got: %v\n", g)
+	}
+}
+
+func TestGetBadNothing(t *testing.T) {
+	testGetBadNothing(t, key.KeyTypeString)
+	testGetBadNothing(t, key.KeyTypeBytes)
+}
+
+func testGetBadNoMount(t *testing.T, keyType key.KeyType) {
+	mapds := dstest.NewMapDatastoreForTest(t, keyType)
+	m := mount.New([]mount.Mount{
+		{Prefix: key.NewKeyFromTypeAndString(keyType, "/redherring"), Datastore: mapds},
+	})
+
+	_, err := m.Get(key.NewKeyFromTypeAndString(keyType, "/quux/thud"))
 	if g, e := err, datastore.ErrNotFound; g != e {
 		t.Fatalf("expected ErrNotFound, got: %v\n", g)
 	}
 }
 
 func TestGetBadNoMount(t *testing.T) {
-	mapds := dstest.NewMapDatastoreForTest(t, key.KeyTypeString)
+	testGetBadNoMount(t, key.KeyTypeString)
+	testGetBadNoMount(t, key.KeyTypeBytes)
+}
+
+func testGetNotFound(t *testing.T, keyType key.KeyType) {
+	mapds := dstest.NewMapDatastoreForTest(t, keyType)
 	m := mount.New([]mount.Mount{
-		{Prefix: key.NewStrKey("/redherring"), Datastore: mapds},
+		{Prefix: key.NewKeyFromTypeAndString(keyType, "/quux"), Datastore: mapds},
 	})
 
-	_, err := m.Get(key.NewStrKey("/quux/thud"))
+	_, err := m.Get(key.NewKeyFromTypeAndString(keyType, "/quux/thud"))
 	if g, e := err, datastore.ErrNotFound; g != e {
 		t.Fatalf("expected ErrNotFound, got: %v\n", g)
 	}
 }
 
 func TestGetNotFound(t *testing.T) {
-	mapds := dstest.NewMapDatastoreForTest(t, key.KeyTypeString)
-	m := mount.New([]mount.Mount{
-		{Prefix: key.NewStrKey("/quux"), Datastore: mapds},
-	})
-
-	_, err := m.Get(key.NewStrKey("/quux/thud"))
-	if g, e := err, datastore.ErrNotFound; g != e {
-		t.Fatalf("expected ErrNotFound, got: %v\n", g)
-	}
+	testGetNotFound(t, key.KeyTypeString)
+	testGetNotFound(t, key.KeyTypeBytes)
 }
 
-func TestGet(t *testing.T) {
-	mapds := dstest.NewMapDatastoreForTest(t, key.KeyTypeString)
+func testGet(t *testing.T, keyType key.KeyType) {
+	mapds := dstest.NewMapDatastoreForTest(t, keyType)
 	m := mount.New([]mount.Mount{
-		{Prefix: key.NewStrKey("/quux"), Datastore: mapds},
+		{Prefix: key.NewKeyFromTypeAndString(keyType, "/quux"), Datastore: mapds},
 	})
 
-	if err := mapds.Put(key.NewStrKey("/thud"), []byte("foobar")); err != nil {
+	if err := mapds.Put(key.NewKeyFromTypeAndString(keyType, "/thud"),
+		[]byte("foobar")); err != nil {
 		t.Fatalf("Get error: %v", err)
 	}
 
-	buf, err := m.Get(key.NewStrKey("/quux/thud"))
+	buf, err := m.Get(key.NewKeyFromTypeAndString(keyType, "/quux/thud"))
 	if err != nil {
 		t.Fatalf("Put error: %v", err)
 	}
@@ -112,10 +142,35 @@ func TestGet(t *testing.T) {
 	}
 }
 
-func TestHasBadNothing(t *testing.T) {
+func TestGet(t *testing.T) {
+	testGet(t, key.KeyTypeString)
+	testGet(t, key.KeyTypeBytes)
+}
+
+func testHasBadNothing(t *testing.T, keyType key.KeyType) {
 	m := mount.New([]mount.Mount{})
 
-	found, err := m.Has(key.NewStrKey("/quux/thud"))
+	found, err := m.Has(key.NewKeyFromTypeAndString(keyType, "/quux/thud"))
+	if err != nil {
+		t.Fatalf("Has error: %v", err)
+	}
+	if g, e := found, false; g != e {
+		t.Fatalf("wrong value: %v != %v", g, e)
+	}
+}
+
+func TestHasBadNothing(t *testing.T) {
+	testHasBadNothing(t, key.KeyTypeString)
+	testHasBadNothing(t, key.KeyTypeBytes)
+}
+
+func testHasBadNoMount(t *testing.T, keyType key.KeyType) {
+	mapds := dstest.NewMapDatastoreForTest(t, keyType)
+	m := mount.New([]mount.Mount{
+		{Prefix: key.NewKeyFromTypeAndString(keyType, "/redherring"), Datastore: mapds},
+	})
+
+	found, err := m.Has(key.NewKeyFromTypeAndString(keyType, "/quux/thud"))
 	if err != nil {
 		t.Fatalf("Has error: %v", err)
 	}
@@ -125,12 +180,17 @@ func TestHasBadNothing(t *testing.T) {
 }
 
 func TestHasBadNoMount(t *testing.T) {
-	mapds := dstest.NewMapDatastoreForTest(t, key.KeyTypeString)
+	testHasBadNoMount(t, key.KeyTypeString)
+	testHasBadNoMount(t, key.KeyTypeBytes)
+}
+
+func testHasNotFound(t *testing.T, keyType key.KeyType) {
+	mapds := dstest.NewMapDatastoreForTest(t, keyType)
 	m := mount.New([]mount.Mount{
-		{Prefix: key.NewStrKey("/redherring"), Datastore: mapds},
+		{Prefix: key.NewKeyFromTypeAndString(keyType, "/quux"), Datastore: mapds},
 	})
 
-	found, err := m.Has(key.NewStrKey("/quux/thud"))
+	found, err := m.Has(key.NewKeyFromTypeAndString(keyType, "/quux/thud"))
 	if err != nil {
 		t.Fatalf("Has error: %v", err)
 	}
@@ -140,31 +200,22 @@ func TestHasBadNoMount(t *testing.T) {
 }
 
 func TestHasNotFound(t *testing.T) {
-	mapds := dstest.NewMapDatastoreForTest(t, key.KeyTypeString)
-	m := mount.New([]mount.Mount{
-		{Prefix: key.NewStrKey("/quux"), Datastore: mapds},
-	})
-
-	found, err := m.Has(key.NewStrKey("/quux/thud"))
-	if err != nil {
-		t.Fatalf("Has error: %v", err)
-	}
-	if g, e := found, false; g != e {
-		t.Fatalf("wrong value: %v != %v", g, e)
-	}
+	testHasNotFound(t, key.KeyTypeString)
+	testHasNotFound(t, key.KeyTypeBytes)
 }
 
-func TestHas(t *testing.T) {
-	mapds := dstest.NewMapDatastoreForTest(t, key.KeyTypeString)
+func testHas(t *testing.T, keyType key.KeyType) {
+	mapds := dstest.NewMapDatastoreForTest(t, keyType)
 	m := mount.New([]mount.Mount{
-		{Prefix: key.NewStrKey("/quux"), Datastore: mapds},
+		{Prefix: key.NewKeyFromTypeAndString(keyType, "/quux"), Datastore: mapds},
 	})
 
-	if err := mapds.Put(key.NewStrKey("/thud"), []byte("foobar")); err != nil {
+	if err := mapds.Put(key.NewKeyFromTypeAndString(keyType, "/thud"),
+		[]byte("foobar")); err != nil {
 		t.Fatalf("Put error: %v", err)
 	}
 
-	found, err := m.Has(key.NewStrKey("/quux/thud"))
+	found, err := m.Has(key.NewKeyFromTypeAndString(keyType, "/quux/thud"))
 	if err != nil {
 		t.Fatalf("Has error: %v", err)
 	}
@@ -173,35 +224,46 @@ func TestHas(t *testing.T) {
 	}
 }
 
-func TestDeleteNotFound(t *testing.T) {
-	mapds := dstest.NewMapDatastoreForTest(t, key.KeyTypeString)
+func TestHas(t *testing.T) {
+	testHas(t, key.KeyTypeString)
+	testHas(t, key.KeyTypeBytes)
+}
+
+func testDeleteNotFound(t *testing.T, keyType key.KeyType) {
+	mapds := dstest.NewMapDatastoreForTest(t, keyType)
 	m := mount.New([]mount.Mount{
-		{Prefix: key.NewStrKey("/quux"), Datastore: mapds},
+		{Prefix: key.NewKeyFromTypeAndString(keyType, "/quux"), Datastore: mapds},
 	})
 
-	err := m.Delete(key.NewStrKey("/quux/thud"))
+	err := m.Delete(key.NewKeyFromTypeAndString(keyType, "/quux/thud"))
 	if err != nil {
 		t.Fatalf("expected nil, got: %v\n", err)
 	}
 }
 
-func TestDelete(t *testing.T) {
-	mapds := dstest.NewMapDatastoreForTest(t, key.KeyTypeString)
+func TestDeleteNotFound(t *testing.T) {
+	testDeleteNotFound(t, key.KeyTypeString)
+	testDeleteNotFound(t, key.KeyTypeBytes)
+}
+
+func testDelete(t *testing.T, keyType key.KeyType) {
+	mapds := dstest.NewMapDatastoreForTest(t, keyType)
 	m := mount.New([]mount.Mount{
-		{Prefix: key.NewStrKey("/quux"), Datastore: mapds},
+		{Prefix: key.NewKeyFromTypeAndString(keyType, "/quux"), Datastore: mapds},
 	})
 
-	if err := mapds.Put(key.NewStrKey("/thud"), []byte("foobar")); err != nil {
+	if err := mapds.Put(key.NewKeyFromTypeAndString(keyType, "/thud"),
+		[]byte("foobar")); err != nil {
 		t.Fatalf("Put error: %v", err)
 	}
 
-	err := m.Delete(key.NewStrKey("/quux/thud"))
+	err := m.Delete(key.NewKeyFromTypeAndString(keyType, "/quux/thud"))
 	if err != nil {
 		t.Fatalf("Delete error: %v", err)
 	}
 
 	// make sure it disappeared
-	found, err := mapds.Has(key.NewStrKey("/thud"))
+	found, err := mapds.Has(key.NewKeyFromTypeAndString(keyType, "/thud"))
 	if err != nil {
 		t.Fatalf("Has error: %v", err)
 	}
@@ -210,18 +272,23 @@ func TestDelete(t *testing.T) {
 	}
 }
 
-func TestQuerySimple(t *testing.T) {
-	mapds := dstest.NewMapDatastoreForTest(t, key.KeyTypeString)
+func TestDelete(t *testing.T) {
+	testDelete(t, key.KeyTypeString)
+	testDelete(t, key.KeyTypeBytes)
+}
+
+func testQuerySimple(t *testing.T, keyType key.KeyType) {
+	mapds := dstest.NewMapDatastoreForTest(t, keyType)
 	m := mount.New([]mount.Mount{
-		{Prefix: key.NewStrKey("/quux"), Datastore: mapds},
+		{Prefix: key.NewKeyFromTypeAndString(keyType, "/quux"), Datastore: mapds},
 	})
 
-	myKey := key.NewStrKey("/quux/thud")
+	myKey := key.NewKeyFromTypeAndString(keyType, "/quux/thud")
 	if err := m.Put(myKey, []byte("foobar")); err != nil {
 		t.Fatalf("Put error: %v", err)
 	}
 
-	res, err := m.Query(query.Query{Prefix: key.QueryStrKey("/quux")})
+	res, err := m.Query(query.Query{Prefix: key.QueryKeyFromTypeAndString(keyType, "/quux")})
 	if err != nil {
 		t.Fatalf("Query fail: %v\n", err)
 	}
@@ -247,37 +314,42 @@ func TestQuerySimple(t *testing.T) {
 	}
 }
 
-func TestQueryAcrossMounts(t *testing.T) {
-	mapds0 := dstest.NewMapDatastoreForTest(t, key.KeyTypeString)
-	mapds1 := dstest.NewMapDatastoreForTest(t, key.KeyTypeString)
-	mapds2 := dstest.NewMapDatastoreForTest(t, key.KeyTypeString)
-	mapds3 := dstest.NewMapDatastoreForTest(t, key.KeyTypeString)
+func TestQuerySimple(t *testing.T) {
+	testQuerySimple(t, key.KeyTypeString)
+	testQuerySimple(t, key.KeyTypeBytes)
+}
+
+func testQueryAcrossMounts(t *testing.T, keyType key.KeyType) {
+	mapds0 := dstest.NewMapDatastoreForTest(t, keyType)
+	mapds1 := dstest.NewMapDatastoreForTest(t, keyType)
+	mapds2 := dstest.NewMapDatastoreForTest(t, keyType)
+	mapds3 := dstest.NewMapDatastoreForTest(t, keyType)
 	m := mount.New([]mount.Mount{
-		{Prefix: key.NewStrKey("/foo"), Datastore: mapds1},
-		{Prefix: key.NewStrKey("/bar"), Datastore: mapds2},
-		{Prefix: key.NewStrKey("/baz"), Datastore: mapds3},
-		{Prefix: key.NewStrKey("/"), Datastore: mapds0},
+		{Prefix: key.NewKeyFromTypeAndString(keyType, "/foo"), Datastore: mapds1},
+		{Prefix: key.NewKeyFromTypeAndString(keyType, "/bar"), Datastore: mapds2},
+		{Prefix: key.NewKeyFromTypeAndString(keyType, "/baz"), Datastore: mapds3},
+		{Prefix: key.EmptyKeyFromType(keyType), Datastore: mapds0},
 	})
 
-	if err := m.Put(key.NewStrKey("/foo/lorem"), []byte("123")); err != nil {
+	if err := m.Put(key.NewKeyFromTypeAndString(keyType, "/foo/lorem"), []byte("123")); err != nil {
 		t.Fatal(err)
 	}
-	if err := m.Put(key.NewStrKey("/bar/ipsum"), []byte("234")); err != nil {
+	if err := m.Put(key.NewKeyFromTypeAndString(keyType, "/bar/ipsum"), []byte("234")); err != nil {
 		t.Fatal(err)
 	}
-	if err := m.Put(key.NewStrKey("/bar/dolor"), []byte("345")); err != nil {
+	if err := m.Put(key.NewKeyFromTypeAndString(keyType, "/bar/dolor"), []byte("345")); err != nil {
 		t.Fatal(err)
 	}
-	if err := m.Put(key.NewStrKey("/baz/sit"), []byte("456")); err != nil {
+	if err := m.Put(key.NewKeyFromTypeAndString(keyType, "/baz/sit"), []byte("456")); err != nil {
 		t.Fatal(err)
 	}
-	if err := m.Put(key.NewStrKey("/banana"), []byte("567")); err != nil {
+	if err := m.Put(key.NewKeyFromTypeAndString(keyType, "/banana"), []byte("567")); err != nil {
 		t.Fatal(err)
 	}
 
 	expect := func(prefix string, values map[string]string) {
 		t.Helper()
-		res, err := m.Query(query.Query{Prefix: key.QueryStrKey(prefix)})
+		res, err := m.Query(query.Query{Prefix: key.QueryKeyFromTypeAndString(keyType, prefix)})
 		if err != nil {
 			t.Fatalf("Query fail: %v\n", err)
 		}
@@ -328,29 +400,36 @@ func TestQueryAcrossMounts(t *testing.T) {
 	expect("/banana", nil)
 }
 
-func TestQueryAcrossMountsWithSort(t *testing.T) {
-	mapds0 := dstest.NewMapDatastoreForTest(t, key.KeyTypeString)
-	mapds1 := dstest.NewMapDatastoreForTest(t, key.KeyTypeString)
-	mapds2 := dstest.NewMapDatastoreForTest(t, key.KeyTypeString)
+func TestQueryAcrossMounts(t *testing.T) {
+	testQueryAcrossMounts(t, key.KeyTypeString)
+	// Expected to fail for BytesKey
+	//testQueryAcrossMounts(t, key.KeyTypeBytes)
+}
+
+func testQueryAcrossMountsWithSort(t *testing.T, keyType key.KeyType) {
+	mapds0 := dstest.NewMapDatastoreForTest(t, keyType)
+	mapds1 := dstest.NewMapDatastoreForTest(t, keyType)
+	mapds2 := dstest.NewMapDatastoreForTest(t, keyType)
 	m := mount.New([]mount.Mount{
-		{Prefix: key.NewStrKey("/zoo"), Datastore: mapds1},
-		{Prefix: key.NewStrKey("/boo/5"), Datastore: mapds2},
-		{Prefix: key.NewStrKey("/boo"), Datastore: mapds0},
+		{Prefix: key.NewKeyFromTypeAndString(keyType, "/zoo"), Datastore: mapds1},
+		{Prefix: key.NewKeyFromTypeAndString(keyType, "/boo/5"), Datastore: mapds2},
+		{Prefix: key.NewKeyFromTypeAndString(keyType, "/boo"), Datastore: mapds0},
 	})
 
-	if err := m.Put(key.NewStrKey("/zoo/0"), []byte("123")); err != nil {
+	if err := m.Put(key.NewKeyFromTypeAndString(keyType, "/zoo/0"), []byte("123")); err != nil {
 		t.Fatal(err)
 	}
-	if err := m.Put(key.NewStrKey("/zoo/1"), []byte("234")); err != nil {
+	if err := m.Put(key.NewKeyFromTypeAndString(keyType, "/zoo/1"), []byte("234")); err != nil {
 		t.Fatal(err)
 	}
-	if err := m.Put(key.NewStrKey("/boo/9"), []byte("345")); err != nil {
+	if err := m.Put(key.NewKeyFromTypeAndString(keyType, "/boo/9"), []byte("345")); err != nil {
 		t.Fatal(err)
 	}
-	if err := m.Put(key.NewStrKey("/boo/3"), []byte("456")); err != nil {
+	if err := m.Put(key.NewKeyFromTypeAndString(keyType, "/boo/3"), []byte("456")); err != nil {
 		t.Fatal(err)
 	}
-	if err := m.Put(key.NewStrKey("/boo/5/hello"), []byte("789")); err != nil {
+	if err := m.Put(key.NewKeyFromTypeAndString(keyType, "/boo/5/hello"),
+		[]byte("789")); err != nil {
 		t.Fatal(err)
 	}
 
@@ -387,35 +466,41 @@ func TestQueryAcrossMountsWithSort(t *testing.T) {
 	}
 }
 
-func TestQueryLimitAcrossMountsWithSort(t *testing.T) {
-	mapds1 := sync.MutexWrap(dstest.NewMapDatastoreForTest(t, key.KeyTypeString))
-	mapds2 := sync.MutexWrap(dstest.NewMapDatastoreForTest(t, key.KeyTypeString))
-	mapds3 := sync.MutexWrap(dstest.NewMapDatastoreForTest(t, key.KeyTypeString))
+func TestQueryAcrossMountsWithSort(t *testing.T) {
+	testQueryAcrossMountsWithSort(t, key.KeyTypeString)
+	// Expected to fail for BytesKey
+	//testQueryAcrossMountsWithSort(t, key.KeyTypeBytes)
+}
+
+func testQueryLimitAcrossMountsWithSort(t *testing.T, keyType key.KeyType) {
+	mapds1 := sync.MutexWrap(dstest.NewMapDatastoreForTest(t, keyType))
+	mapds2 := sync.MutexWrap(dstest.NewMapDatastoreForTest(t, keyType))
+	mapds3 := sync.MutexWrap(dstest.NewMapDatastoreForTest(t, keyType))
 	m := mount.New([]mount.Mount{
-		{Prefix: key.NewStrKey("/rok"), Datastore: mapds1},
-		{Prefix: key.NewStrKey("/zoo"), Datastore: mapds2},
-		{Prefix: key.NewStrKey("/noop"), Datastore: mapds3},
+		{Prefix: key.NewKeyFromTypeAndString(keyType, "/rok"), Datastore: mapds1},
+		{Prefix: key.NewKeyFromTypeAndString(keyType, "/zoo"), Datastore: mapds2},
+		{Prefix: key.NewKeyFromTypeAndString(keyType, "/noop"), Datastore: mapds3},
 	})
 
-	if err := m.Put(key.NewStrKey("/rok/0"), []byte("ghi")); err != nil {
+	if err := m.Put(key.NewKeyFromTypeAndString(keyType, "/rok/0"), []byte("ghi")); err != nil {
 		t.Fatal(err)
 	}
-	if err := m.Put(key.NewStrKey("/zoo/0"), []byte("123")); err != nil {
+	if err := m.Put(key.NewKeyFromTypeAndString(keyType, "/zoo/0"), []byte("123")); err != nil {
 		t.Fatal(err)
 	}
-	if err := m.Put(key.NewStrKey("/rok/1"), []byte("def")); err != nil {
+	if err := m.Put(key.NewKeyFromTypeAndString(keyType, "/rok/1"), []byte("def")); err != nil {
 		t.Fatal(err)
 	}
-	if err := m.Put(key.NewStrKey("/zoo/1"), []byte("167")); err != nil {
+	if err := m.Put(key.NewKeyFromTypeAndString(keyType, "/zoo/1"), []byte("167")); err != nil {
 		t.Fatal(err)
 	}
-	if err := m.Put(key.NewStrKey("/zoo/2"), []byte("345")); err != nil {
+	if err := m.Put(key.NewKeyFromTypeAndString(keyType, "/zoo/2"), []byte("345")); err != nil {
 		t.Fatal(err)
 	}
-	if err := m.Put(key.NewStrKey("/rok/3"), []byte("abc")); err != nil {
+	if err := m.Put(key.NewKeyFromTypeAndString(keyType, "/rok/3"), []byte("abc")); err != nil {
 		t.Fatal(err)
 	}
-	if err := m.Put(key.NewStrKey("/zoo/3"), []byte("456")); err != nil {
+	if err := m.Put(key.NewKeyFromTypeAndString(keyType, "/zoo/3"), []byte("456")); err != nil {
 		t.Fatal(err)
 	}
 
@@ -451,35 +536,41 @@ func TestQueryLimitAcrossMountsWithSort(t *testing.T) {
 	}
 }
 
-func TestQueryLimitAndOffsetAcrossMountsWithSort(t *testing.T) {
-	mapds1 := sync.MutexWrap(dstest.NewMapDatastoreForTest(t, key.KeyTypeString))
-	mapds2 := sync.MutexWrap(dstest.NewMapDatastoreForTest(t, key.KeyTypeString))
-	mapds3 := sync.MutexWrap(dstest.NewMapDatastoreForTest(t, key.KeyTypeString))
+func TestQueryLimitAcrossMountsWithSort(t *testing.T) {
+	testQueryLimitAcrossMountsWithSort(t, key.KeyTypeString)
+	// Expected to fail for BytesKey
+	//testQueryLimitAcrossMountsWithSort(t, key.KeyTypeBytes)
+}
+
+func testQueryLimitAndOffsetAcrossMountsWithSort(t *testing.T, keyType key.KeyType) {
+	mapds1 := sync.MutexWrap(dstest.NewMapDatastoreForTest(t, keyType))
+	mapds2 := sync.MutexWrap(dstest.NewMapDatastoreForTest(t, keyType))
+	mapds3 := sync.MutexWrap(dstest.NewMapDatastoreForTest(t, keyType))
 	m := mount.New([]mount.Mount{
-		{Prefix: key.NewStrKey("/rok"), Datastore: mapds1},
-		{Prefix: key.NewStrKey("/zoo"), Datastore: mapds2},
-		{Prefix: key.NewStrKey("/noop"), Datastore: mapds3},
+		{Prefix: key.NewKeyFromTypeAndString(keyType, "/rok"), Datastore: mapds1},
+		{Prefix: key.NewKeyFromTypeAndString(keyType, "/zoo"), Datastore: mapds2},
+		{Prefix: key.NewKeyFromTypeAndString(keyType, "/noop"), Datastore: mapds3},
 	})
 
-	if err := m.Put(key.NewStrKey("/rok/0"), []byte("ghi")); err != nil {
+	if err := m.Put(key.NewKeyFromTypeAndString(keyType, "/rok/0"), []byte("ghi")); err != nil {
 		t.Fatal(err)
 	}
-	if err := m.Put(key.NewStrKey("/zoo/0"), []byte("123")); err != nil {
+	if err := m.Put(key.NewKeyFromTypeAndString(keyType, "/zoo/0"), []byte("123")); err != nil {
 		t.Fatal(err)
 	}
-	if err := m.Put(key.NewStrKey("/rok/1"), []byte("def")); err != nil {
+	if err := m.Put(key.NewKeyFromTypeAndString(keyType, "/rok/1"), []byte("def")); err != nil {
 		t.Fatal(err)
 	}
-	if err := m.Put(key.NewStrKey("/zoo/1"), []byte("167")); err != nil {
+	if err := m.Put(key.NewKeyFromTypeAndString(keyType, "/zoo/1"), []byte("167")); err != nil {
 		t.Fatal(err)
 	}
-	if err := m.Put(key.NewStrKey("/zoo/2"), []byte("345")); err != nil {
+	if err := m.Put(key.NewKeyFromTypeAndString(keyType, "/zoo/2"), []byte("345")); err != nil {
 		t.Fatal(err)
 	}
-	if err := m.Put(key.NewStrKey("/rok/3"), []byte("abc")); err != nil {
+	if err := m.Put(key.NewKeyFromTypeAndString(keyType, "/rok/3"), []byte("abc")); err != nil {
 		t.Fatal(err)
 	}
-	if err := m.Put(key.NewStrKey("/zoo/3"), []byte("456")); err != nil {
+	if err := m.Put(key.NewKeyFromTypeAndString(keyType, "/zoo/3"), []byte("456")); err != nil {
 		t.Fatal(err)
 	}
 
@@ -516,39 +607,46 @@ func TestQueryLimitAndOffsetAcrossMountsWithSort(t *testing.T) {
 	}
 }
 
-func TestQueryFilterAcrossMountsWithSort(t *testing.T) {
-	mapds1 := sync.MutexWrap(dstest.NewMapDatastoreForTest(t, key.KeyTypeString))
-	mapds2 := sync.MutexWrap(dstest.NewMapDatastoreForTest(t, key.KeyTypeString))
-	mapds3 := sync.MutexWrap(dstest.NewMapDatastoreForTest(t, key.KeyTypeString))
+func TestQueryLimitAndOffsetAcrossMountsWithSort(t *testing.T) {
+	testQueryLimitAndOffsetAcrossMountsWithSort(t, key.KeyTypeString)
+	// Expected to fail for BytesKey
+	//testQueryLimitAndOffsetAcrossMountsWithSort(t, key.KeyTypeBytes)
+}
+
+func testQueryFilterAcrossMountsWithSort(t *testing.T, keyType key.KeyType) {
+	mapds1 := sync.MutexWrap(dstest.NewMapDatastoreForTest(t, keyType))
+	mapds2 := sync.MutexWrap(dstest.NewMapDatastoreForTest(t, keyType))
+	mapds3 := sync.MutexWrap(dstest.NewMapDatastoreForTest(t, keyType))
 	m := mount.New([]mount.Mount{
-		{Prefix: key.NewStrKey("/rok"), Datastore: mapds1},
-		{Prefix: key.NewStrKey("/zoo"), Datastore: mapds2},
-		{Prefix: key.NewStrKey("/noop"), Datastore: mapds3},
+		{Prefix: key.NewKeyFromTypeAndString(keyType, "/rok"), Datastore: mapds1},
+		{Prefix: key.NewKeyFromTypeAndString(keyType, "/zoo"), Datastore: mapds2},
+		{Prefix: key.NewKeyFromTypeAndString(keyType, "/noop"), Datastore: mapds3},
 	})
 
-	if err := m.Put(key.NewStrKey("/rok/0"), []byte("ghi")); err != nil {
+	if err := m.Put(key.NewKeyFromTypeAndString(keyType, "/rok/0"), []byte("ghi")); err != nil {
 		t.Fatal(err)
 	}
-	if err := m.Put(key.NewStrKey("/zoo/0"), []byte("123")); err != nil {
+	if err := m.Put(key.NewKeyFromTypeAndString(keyType, "/zoo/0"), []byte("123")); err != nil {
 		t.Fatal(err)
 	}
-	if err := m.Put(key.NewStrKey("/rok/1"), []byte("def")); err != nil {
+	if err := m.Put(key.NewKeyFromTypeAndString(keyType, "/rok/1"), []byte("def")); err != nil {
 		t.Fatal(err)
 	}
-	if err := m.Put(key.NewStrKey("/zoo/1"), []byte("167")); err != nil {
+	if err := m.Put(key.NewKeyFromTypeAndString(keyType, "/zoo/1"), []byte("167")); err != nil {
 		t.Fatal(err)
 	}
-	if err := m.Put(key.NewStrKey("/zoo/2"), []byte("345")); err != nil {
+	if err := m.Put(key.NewKeyFromTypeAndString(keyType, "/zoo/2"), []byte("345")); err != nil {
 		t.Fatal(err)
 	}
-	if err := m.Put(key.NewStrKey("/rok/3"), []byte("abc")); err != nil {
+	if err := m.Put(key.NewKeyFromTypeAndString(keyType, "/rok/3"), []byte("abc")); err != nil {
 		t.Fatal(err)
 	}
-	if err := m.Put(key.NewStrKey("/zoo/3"), []byte("456")); err != nil {
+	if err := m.Put(key.NewKeyFromTypeAndString(keyType, "/zoo/3"), []byte("456")); err != nil {
 		t.Fatal(err)
 	}
 
-	f := &query.FilterKeyCompare{Op: query.Equal, Key: key.QueryStrKey("/rok/3")}
+	f := &query.FilterKeyCompare{Op: query.Equal, Key: key.QueryKeyFromTypeAndString(
+		keyType, "/rok/3")}
 	q := query.Query{Filters: []query.Filter{f}}
 	res, err := m.Query(q)
 	if err != nil {
@@ -580,12 +678,18 @@ func TestQueryFilterAcrossMountsWithSort(t *testing.T) {
 	}
 }
 
-func TestQueryLimitAndOffsetWithNoData(t *testing.T) {
-	mapds1 := sync.MutexWrap(dstest.NewMapDatastoreForTest(t, key.KeyTypeString))
-	mapds2 := sync.MutexWrap(dstest.NewMapDatastoreForTest(t, key.KeyTypeString))
+func TestQueryFilterAcrossMountsWithSort(t *testing.T) {
+	testQueryFilterAcrossMountsWithSort(t, key.KeyTypeString)
+	// Expected to fail for BytesKey
+	//testQueryFilterAcrossMountsWithSort(t, key.KeyTypeBytes)
+}
+
+func testQueryLimitAndOffsetWithNoData(t *testing.T, keyType key.KeyType) {
+	mapds1 := sync.MutexWrap(dstest.NewMapDatastoreForTest(t, keyType))
+	mapds2 := sync.MutexWrap(dstest.NewMapDatastoreForTest(t, keyType))
 	m := mount.New([]mount.Mount{
-		{Prefix: key.NewStrKey("/rok"), Datastore: mapds1},
-		{Prefix: key.NewStrKey("/zoo"), Datastore: mapds2},
+		{Prefix: key.NewKeyFromTypeAndString(keyType, "/rok"), Datastore: mapds1},
+		{Prefix: key.NewKeyFromTypeAndString(keyType, "/zoo"), Datastore: mapds2},
 	})
 
 	q := query.Query{Limit: 4, Offset: 3}
@@ -611,18 +715,23 @@ func TestQueryLimitAndOffsetWithNoData(t *testing.T) {
 	}
 }
 
-func TestQueryLimitWithNotEnoughData(t *testing.T) {
-	mapds1 := sync.MutexWrap(dstest.NewMapDatastoreForTest(t, key.KeyTypeString))
-	mapds2 := sync.MutexWrap(dstest.NewMapDatastoreForTest(t, key.KeyTypeString))
+func TestQueryLimitAndOffsetWithNoData(t *testing.T) {
+	testQueryLimitAndOffsetWithNoData(t, key.KeyTypeString)
+	testQueryLimitAndOffsetWithNoData(t, key.KeyTypeBytes)
+}
+
+func testQueryLimitWithNotEnoughData(t *testing.T, keyType key.KeyType) {
+	mapds1 := sync.MutexWrap(dstest.NewMapDatastoreForTest(t, keyType))
+	mapds2 := sync.MutexWrap(dstest.NewMapDatastoreForTest(t, keyType))
 	m := mount.New([]mount.Mount{
-		{Prefix: key.NewStrKey("/rok"), Datastore: mapds1},
-		{Prefix: key.NewStrKey("/zoo"), Datastore: mapds2},
+		{Prefix: key.NewKeyFromTypeAndString(keyType, "/rok"), Datastore: mapds1},
+		{Prefix: key.NewKeyFromTypeAndString(keyType, "/zoo"), Datastore: mapds2},
 	})
 
-	if err := m.Put(key.NewStrKey("/zoo/0"), []byte("123")); err != nil {
+	if err := m.Put(key.NewKeyFromTypeAndString(keyType, "/zoo/0"), []byte("123")); err != nil {
 		t.Fatal(err)
 	}
-	if err := m.Put(key.NewStrKey("/rok/1"), []byte("167")); err != nil {
+	if err := m.Put(key.NewKeyFromTypeAndString(keyType, "/rok/1"), []byte("167")); err != nil {
 		t.Fatal(err)
 	}
 
@@ -652,18 +761,23 @@ func TestQueryLimitWithNotEnoughData(t *testing.T) {
 	}
 }
 
-func TestQueryOffsetWithNotEnoughData(t *testing.T) {
-	mapds1 := sync.MutexWrap(dstest.NewMapDatastoreForTest(t, key.KeyTypeString))
-	mapds2 := sync.MutexWrap(dstest.NewMapDatastoreForTest(t, key.KeyTypeString))
+func TestQueryLimitWithNotEnoughData(t *testing.T) {
+	testQueryLimitWithNotEnoughData(t, key.KeyTypeString)
+	testQueryLimitWithNotEnoughData(t, key.KeyTypeBytes)
+}
+
+func testQueryOffsetWithNotEnoughData(t *testing.T, keyType key.KeyType) {
+	mapds1 := sync.MutexWrap(dstest.NewMapDatastoreForTest(t, keyType))
+	mapds2 := sync.MutexWrap(dstest.NewMapDatastoreForTest(t, keyType))
 	m := mount.New([]mount.Mount{
-		{Prefix: key.NewStrKey("/rok"), Datastore: mapds1},
-		{Prefix: key.NewStrKey("/zoo"), Datastore: mapds2},
+		{Prefix: key.NewKeyFromTypeAndString(keyType, "/rok"), Datastore: mapds1},
+		{Prefix: key.NewKeyFromTypeAndString(keyType, "/zoo"), Datastore: mapds2},
 	})
 
-	if err := m.Put(key.NewStrKey("/zoo/0"), []byte("123")); err != nil {
+	if err := m.Put(key.NewKeyFromTypeAndString(keyType, "/zoo/0"), []byte("123")); err != nil {
 		t.Fatal(err)
 	}
-	if err := m.Put(key.NewStrKey("/rok/1"), []byte("167")); err != nil {
+	if err := m.Put(key.NewKeyFromTypeAndString(keyType, "/rok/1"), []byte("167")); err != nil {
 		t.Fatal(err)
 	}
 
@@ -690,23 +804,28 @@ func TestQueryOffsetWithNotEnoughData(t *testing.T) {
 	}
 }
 
-func TestLookupPrio(t *testing.T) {
-	mapds0 := dstest.NewMapDatastoreForTest(t, key.KeyTypeString)
-	mapds1 := dstest.NewMapDatastoreForTest(t, key.KeyTypeString)
+func TestQueryOffsetWithNotEnoughData(t *testing.T) {
+	testQueryOffsetWithNotEnoughData(t, key.KeyTypeString)
+	testQueryOffsetWithNotEnoughData(t, key.KeyTypeBytes)
+}
+
+func testLookupPrio(t *testing.T, keyType key.KeyType) {
+	mapds0 := dstest.NewMapDatastoreForTest(t, keyType)
+	mapds1 := dstest.NewMapDatastoreForTest(t, keyType)
 
 	m := mount.New([]mount.Mount{
-		{Prefix: key.NewStrKey("/"), Datastore: mapds0},
-		{Prefix: key.NewStrKey("/foo"), Datastore: mapds1},
+		{Prefix: key.EmptyKeyFromType(keyType), Datastore: mapds0},
+		{Prefix: key.NewKeyFromTypeAndString(keyType, "/foo"), Datastore: mapds1},
 	})
 
-	if err := m.Put(key.NewStrKey("/foo/bar"), []byte("123")); err != nil {
+	if err := m.Put(key.NewKeyFromTypeAndString(keyType, "/foo/bar"), []byte("123")); err != nil {
 		t.Fatal(err)
 	}
-	if err := m.Put(key.NewStrKey("/baz"), []byte("234")); err != nil {
+	if err := m.Put(key.NewKeyFromTypeAndString(keyType, "/baz"), []byte("234")); err != nil {
 		t.Fatal(err)
 	}
 
-	found, err := mapds0.Has(key.NewStrKey("/baz"))
+	found, err := mapds0.Has(key.NewKeyFromTypeAndString(keyType, "/baz"))
 	if err != nil {
 		t.Fatalf("Has error: %v", err)
 	}
@@ -714,7 +833,7 @@ func TestLookupPrio(t *testing.T) {
 		t.Fatalf("wrong value: %v != %v", g, e)
 	}
 
-	found, err = mapds0.Has(key.NewStrKey("/foo/bar"))
+	found, err = mapds0.Has(key.NewKeyFromTypeAndString(keyType, "/foo/bar"))
 	if err != nil {
 		t.Fatalf("Has error: %v", err)
 	}
@@ -722,7 +841,7 @@ func TestLookupPrio(t *testing.T) {
 		t.Fatalf("wrong value: %v != %v", g, e)
 	}
 
-	found, err = mapds1.Has(key.NewStrKey("/bar"))
+	found, err = mapds1.Has(key.NewKeyFromTypeAndString(keyType, "/bar"))
 	if err != nil {
 		t.Fatalf("Has error: %v", err)
 	}
@@ -731,15 +850,24 @@ func TestLookupPrio(t *testing.T) {
 	}
 }
 
-func TestNestedMountSync(t *testing.T) {
-	internalDSRoot := dstest.NewMapDatastoreForTest(t, key.KeyTypeString)
-	internalDSFoo := dstest.NewMapDatastoreForTest(t, key.KeyTypeString)
-	internalDSFooBar := dstest.NewMapDatastoreForTest(t, key.KeyTypeString)
+func TestLookupPrio(t *testing.T) {
+	testLookupPrio(t, key.KeyTypeString)
+	testLookupPrio(t, key.KeyTypeBytes)
+}
+
+func testNestedMountSync(t *testing.T, keyType key.KeyType) {
+	internalDSRoot := dstest.NewMapDatastoreForTest(t, keyType)
+	internalDSFoo := dstest.NewMapDatastoreForTest(t, keyType)
+	internalDSFooBar := dstest.NewMapDatastoreForTest(t, keyType)
 
 	m := mount.New([]mount.Mount{
-		{Prefix: key.NewStrKey("/foo"), Datastore: autobatch.NewAutoBatching(internalDSFoo, 10)},
-		{Prefix: key.NewStrKey("/foo/bar"), Datastore: autobatch.NewAutoBatching(internalDSFooBar, 10)},
-		{Prefix: key.NewStrKey("/"), Datastore: autobatch.NewAutoBatching(internalDSRoot, 10)},
+		{Prefix: key.NewKeyFromTypeAndString(keyType, "/foo"), Datastore: autobatch.NewAutoBatching(
+			internalDSFoo, 10)},
+		{Prefix: key.NewKeyFromTypeAndString(keyType, "/foo/bar"),
+			Datastore: autobatch.NewAutoBatching(
+				internalDSFooBar, 10)},
+		{Prefix: key.EmptyKeyFromType(keyType), Datastore: autobatch.NewAutoBatching(
+			internalDSRoot, 10)},
 	})
 
 	// Testing scenarios
@@ -749,14 +877,14 @@ func TestNestedMountSync(t *testing.T) {
 
 	addToDS := func(str string) {
 		t.Helper()
-		if err := m.Put(key.NewStrKey(str), []byte(str)); err != nil {
+		if err := m.Put(key.NewKeyFromTypeAndString(keyType, str), []byte(str)); err != nil {
 			t.Fatal(err)
 		}
 	}
 
 	checkVal := func(d datastore.Datastore, str string, expectFound bool) {
 		t.Helper()
-		res, err := d.Has(key.NewStrKey(str))
+		res, err := d.Has(key.NewKeyFromTypeAndString(keyType, str))
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -774,7 +902,7 @@ func TestNestedMountSync(t *testing.T) {
 	addToDS("/foo/baz")
 	addToDS("/beep/bop")
 
-	if err := m.Sync(key.NewStrKey("/foo")); err != nil {
+	if err := m.Sync(key.NewKeyFromTypeAndString(keyType, "/foo")); err != nil {
 		t.Fatal(err)
 	}
 
@@ -787,12 +915,17 @@ func TestNestedMountSync(t *testing.T) {
 	addToDS("/fwop")
 	addToDS("/bloop")
 
-	if err := m.Sync(key.NewStrKey("/fwop")); err != nil {
+	if err := m.Sync(key.NewKeyFromTypeAndString(keyType, "/fwop")); err != nil {
 		t.Fatal(err)
 	}
 
 	checkVal(internalDSRoot, "/fwop", true)
 	checkVal(internalDSRoot, "/bloop", false)
+}
+
+func TestNestedMountSync(t *testing.T) {
+	testNestedMountSync(t, key.KeyTypeString)
+	testNestedMountSync(t, key.KeyTypeBytes)
 }
 
 type errQueryDS struct {
@@ -803,16 +936,16 @@ func (d *errQueryDS) Query(q query.Query) (query.Results, error) {
 	return nil, errors.New("test error")
 }
 
-func TestErrQueryClose(t *testing.T) {
+func testErrQueryClose(t *testing.T, keyType key.KeyType) {
 	eqds := &errQueryDS{}
-	mds := dstest.NewMapDatastoreForTest(t, key.KeyTypeString)
+	mds := dstest.NewMapDatastoreForTest(t, keyType)
 
 	m := mount.New([]mount.Mount{
-		{Prefix: key.NewStrKey("/"), Datastore: mds},
-		{Prefix: key.NewStrKey("/foo"), Datastore: eqds},
+		{Prefix: key.EmptyKeyFromType(keyType), Datastore: mds},
+		{Prefix: key.NewKeyFromTypeAndString(keyType, "/foo"), Datastore: eqds},
 	})
 
-	if err := m.Put(key.NewStrKey("/baz"), []byte("123")); err != nil {
+	if err := m.Put(key.NewKeyFromTypeAndString(keyType, "/baz"), []byte("123")); err != nil {
 		t.Fatal(err)
 	}
 
@@ -823,35 +956,60 @@ func TestErrQueryClose(t *testing.T) {
 	}
 }
 
-func TestMaintenanceFunctions(t *testing.T) {
+func TestErrQueryClose(t *testing.T) {
+	testErrQueryClose(t, key.KeyTypeString)
+	testErrQueryClose(t, key.KeyTypeBytes)
+}
+
+func testMaintenanceFunctions(t *testing.T, keyType key.KeyType) {
 	mapds := dstest.NewTestDatastore(key.KeyTypeString, true)
 	m := mount.New([]mount.Mount{
-		{Prefix: key.NewStrKey("/"), Datastore: mapds},
+		{Prefix: key.EmptyKeyFromType(keyType), Datastore: mapds},
 	})
 
-	if err := m.Check(); err.Error() != "checking datastore at /: test error" {
+	var path string
+	switch keyType {
+	case key.KeyTypeString:
+		path ="/"
+	case key.KeyTypeBytes:
+		path =""
+	default:
+		panic(key.ErrKeyTypeNotSupported)
+	}
+
+	if err := m.Check(); err.Error() != "checking datastore at " + path + ": test error" {
 		t.Errorf("Unexpected Check() error: %s", err)
 	}
 
-	if err := m.CollectGarbage(); err.Error() != "gc on datastore at /: test error" {
+	if err := m.CollectGarbage(); err.Error() != "gc on datastore at " + path + ": test error" {
 		t.Errorf("Unexpected CollectGarbage() error: %s", err)
 	}
 
-	if err := m.Scrub(); err.Error() != "scrubbing datastore at /: test error" {
+	if err := m.Scrub(); err.Error() != "scrubbing datastore at " + path + ": test error" {
 		t.Errorf("Unexpected Scrub() error: %s", err)
 	}
 }
 
-func TestSuite(t *testing.T) {
-	mapds0 := dstest.NewMapDatastoreForTest(t, key.KeyTypeString)
-	mapds1 := dstest.NewMapDatastoreForTest(t, key.KeyTypeString)
-	mapds2 := dstest.NewMapDatastoreForTest(t, key.KeyTypeString)
-	mapds3 := dstest.NewMapDatastoreForTest(t, key.KeyTypeString)
+func TestMaintenanceFunctions(t *testing.T) {
+	testMaintenanceFunctions(t, key.KeyTypeString)
+	testMaintenanceFunctions(t, key.KeyTypeBytes)
+}
+
+func testSuite(t *testing.T, keyType key.KeyType) {
+	mapds0 := dstest.NewMapDatastoreForTest(t, keyType)
+	mapds1 := dstest.NewMapDatastoreForTest(t, keyType)
+	mapds2 := dstest.NewMapDatastoreForTest(t, keyType)
+	mapds3 := dstest.NewMapDatastoreForTest(t, keyType)
 	m := mount.New([]mount.Mount{
-		{Prefix: key.NewStrKey("/prefix"), Datastore: mapds1},
-		{Prefix: key.NewStrKey("/prefix/sub"), Datastore: mapds2},
-		{Prefix: key.NewStrKey("/0"), Datastore: mapds3},
-		{Prefix: key.NewStrKey("/"), Datastore: mapds0},
+		{Prefix: key.NewKeyFromTypeAndString(keyType, "/prefix"), Datastore: mapds1},
+		{Prefix: key.NewKeyFromTypeAndString(keyType, "/prefix/sub"), Datastore: mapds2},
+		{Prefix: key.NewKeyFromTypeAndString(keyType, "/0"), Datastore: mapds3},
+		{Prefix: key.EmptyKeyFromType(keyType), Datastore: mapds0},
 	})
-	dstest.SubtestAll(t, key.KeyTypeString, m)
+	dstest.SubtestAll(t, keyType, m)
+}
+
+func TestSuite(t *testing.T) {
+	testSuite(t, key.KeyTypeString)
+	testSuite(t, key.KeyTypeBytes)
 }

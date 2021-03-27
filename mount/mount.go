@@ -12,14 +12,13 @@ import (
 	"errors"
 	"fmt"
 	"sort"
-	"strings"
 	"sync"
 
 	"go.uber.org/multierr"
 
 	ds "github.com/daotl/go-datastore"
-	key "github.com/daotl/go-datastore/key"
-	query "github.com/daotl/go-datastore/query"
+	"github.com/daotl/go-datastore/key"
+	"github.com/daotl/go-datastore/query"
 )
 
 var (
@@ -80,12 +79,11 @@ var _ ds.Datastore = (*Datastore)(nil)
 func (d *Datastore) lookup(k key.Key) (ds.Datastore, key.Key, key.Key) {
 	for _, m := range d.mounts {
 		if m.Prefix.IsAncestorOf(k) {
-			s := strings.TrimPrefix(k.String(), m.Prefix.String())
-			found := key.NewStrKey(s)
+			found := k.TrimPrefix(m.Prefix)
 			return m.Datastore, m.Prefix, found
 		}
 	}
-	return nil, key.NewStrKey("/"), k
+	return nil, key.EmptyKeyFromType(k.KeyType()), k
 }
 
 type queryResults struct {
@@ -215,10 +213,14 @@ func (h *querySet) next() (query.Result, bool) {
 // * /foo/bar  -> ([/foo/bar], [/])                         # /foo/bar
 // * /bar/foo  -> ([/bar], [/foo])                          # the datastore mounted at /bar, rest is /foo
 // * /ba       -> ([/], [/])                                # the root; only full components are matched.
-func (d *Datastore) lookupAll(prefix key.Key, r query.Range) (
+func (d *Datastore) lookupAll(prefixOrNil key.Key, r query.Range) (
 	dst []ds.Datastore, mountpoint, restPrefixes []key.Key, restRanges []query.Range) {
 
 	for _, m := range d.mounts {
+		prefix := prefixOrNil
+		if prefixOrNil == nil {
+			prefix = key.EmptyKeyFromType(m.Prefix.KeyType())
+		}
 		isDescendantOfPrefix := m.Prefix.IsDescendantOf(prefix)
 		isEuqalOrAncestorOfPrefix := m.Prefix.Equal(prefix) || m.Prefix.IsAncestorOf(prefix)
 		isEuqalOrLargerThanRangeStart := r.Start == nil || r.Start.Less(m.Prefix) || r.Start.Equal(m.Prefix)
@@ -244,10 +246,10 @@ func (d *Datastore) lookupAll(prefix key.Key, r query.Range) (
 
 			// Handle rest prefix
 			if isDescendantOfPrefix {
-				restPrefixes = append(restPrefixes, key.NewStrKey("/"))
+				restPrefixes = append(restPrefixes, key.EmptyKeyFromType(prefix.KeyType()))
 			} else if isEuqalOrAncestorOfPrefix {
-				r := strings.TrimPrefix(prefix.String(), m.Prefix.String())
-				restPrefixes = append(restPrefixes, key.NewStrKey(r))
+				r := prefix.TrimPrefix(m.Prefix)
+				restPrefixes = append(restPrefixes, r)
 
 				// We've found an ancestor (or equal) key. We might have
 				// more general datastores, but they won't contain keys
@@ -453,12 +455,12 @@ func (mt *mountBatch) lookupBatch(k key.Key) (ds.Batch, key.Key, error) {
 	if !ok {
 		bds, ok := child.(ds.Batching)
 		if !ok {
-			return nil, key.NewStrKey(""), ds.ErrBatchUnsupported
+			return nil, key.EmptyKeyFromType(k.KeyType()), ds.ErrBatchUnsupported
 		}
 		var err error
 		t, err = bds.Batch()
 		if err != nil {
-			return nil, key.NewStrKey(""), err
+			return nil, key.EmptyKeyFromType(k.KeyType()), err
 		}
 		mt.mounts[loc.String()] = t
 	}
