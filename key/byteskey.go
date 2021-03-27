@@ -28,8 +28,8 @@ type BytesKey struct {
 }
 
 // NewBytesKey constructs a BytesKey from byte slice.
-func NewBytesKey(b []byte) BytesKey {
-	return BytesKey{b}
+func NewBytesKey(bytes []byte) BytesKey {
+	return BytesKey{bytes}
 }
 
 // NewBytesKeyFromString constructs a BytesKey from s.

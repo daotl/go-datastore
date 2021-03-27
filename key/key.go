@@ -74,18 +74,6 @@ type Key interface {
 	MarshalJSON() ([]byte, error)
 }
 
-// NewKeyFromTypeAndString constructs a Key of keyType from s.
-func NewKeyFromTypeAndString(keyType KeyType, s string) Key {
-	switch keyType {
-	case KeyTypeString:
-		return NewStrKey(s)
-	case KeyTypeBytes:
-		return NewBytesKeyFromString(s)
-	default:
-		panic(ErrKeyTypeNotSupported)
-	}
-}
-
 // EmptyKeyFromType returns the empty key of keyType.
 // for StrKey:		RawStrKey("/")
 // for BytesKey:	NewBytesKey([]byte{})
@@ -100,12 +88,38 @@ func EmptyKeyFromType(keyType KeyType) Key {
 	}
 }
 
+// NewKeyFromTypeAndString constructs a Key of keyType from s.
+func NewKeyFromTypeAndString(keyType KeyType, s string) Key {
+	switch keyType {
+	case KeyTypeString:
+		return NewStrKey(s)
+	case KeyTypeBytes:
+		return NewBytesKeyFromString(s)
+	default:
+		panic(ErrKeyTypeNotSupported)
+	}
+}
+
+// QueryKeyFromTypeAndString constructs a Key of keyType from s.
+// For StrKey, is uses QueryStrKey instead of NewStrKey.
 func QueryKeyFromTypeAndString(keyType KeyType, s string) Key {
 	switch keyType {
 	case KeyTypeString:
 		return QueryStrKey(s)
 	case KeyTypeBytes:
 		return NewBytesKeyFromString(s)
+	default:
+		panic(ErrKeyTypeNotSupported)
+	}
+}
+
+// NewKeyFromTypeAndBytes constructs a Key of keyType from bytes.
+func NewKeyFromTypeAndBytes(keyType KeyType, bytes []byte) Key {
+	switch keyType {
+	case KeyTypeString:
+		return NewStrKeyFromBytes(bytes)
+	case KeyTypeBytes:
+		return NewBytesKey(bytes)
 	default:
 		panic(ErrKeyTypeNotSupported)
 	}

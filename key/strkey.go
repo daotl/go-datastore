@@ -17,7 +17,7 @@ import (
 )
 
 var (
-	EmptyStrKey   = RawStrKey("/")
+	EmptyStrKey = RawStrKey("/")
 
 	ErrNotStrKey = errors.New("argument is not of type StrKey")
 )
@@ -97,6 +97,10 @@ func NewKey(s string) StrKey {
 // Deprecated: RawKey just proxies calls to RawStrKey for backward compatibility.
 func RawKey(s string) StrKey {
 	return RawStrKey(s)
+}
+
+func NewStrKeyFromBytes(bytes []byte) StrKey {
+	return NewStrKey(string(bytes))
 }
 
 // KeyWithNamespaces constructs a key out of a namespace slice.
