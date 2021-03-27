@@ -204,10 +204,10 @@ func TestSuiteBytesKeyDefaultPair(t *testing.T) {
 	dstest.SubtestAll(t, key.KeyTypeBytes, ktds)
 }
 
-func testSuiteStrKeyPrefixTransform(t *testing.T, keyType key.KeyType) {
-	mpds := dstest.NewTestDatastore(keyType, true)
-	ktds := kt.Wrap(mpds, kt.PrefixTransform{Prefix: key.NewKeyFromTypeAndString(keyType, "foo")})
-	dstest.SubtestAll(t, keyType, ktds)
+func testSuiteStrKeyPrefixTransform(t *testing.T, ktype key.KeyType) {
+	mpds := dstest.NewTestDatastore(ktype, true)
+	ktds := kt.Wrap(mpds, kt.PrefixTransform{Prefix: key.NewKeyFromTypeAndString(ktype, "foo")})
+	dstest.SubtestAll(t, ktype, ktds)
 }
 
 func TestSuiteBytesKeyPrefixTransform(t *testing.T) {

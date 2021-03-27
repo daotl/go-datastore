@@ -13,42 +13,42 @@ import (
 	dstest "github.com/daotl/go-datastore/test"
 )
 
-func testLookup(t *testing.T, keyType key.KeyType) {
-	mapds0 := dstest.NewMapDatastoreForTest(t, keyType)
-	mapds1 := dstest.NewMapDatastoreForTest(t, keyType)
-	mapds2 := dstest.NewMapDatastoreForTest(t, keyType)
-	mapds3 := dstest.NewMapDatastoreForTest(t, keyType)
+func testLookup(t *testing.T, ktype key.KeyType) {
+	mapds0 := dstest.NewMapDatastoreForTest(t, ktype)
+	mapds1 := dstest.NewMapDatastoreForTest(t, ktype)
+	mapds2 := dstest.NewMapDatastoreForTest(t, ktype)
+	mapds3 := dstest.NewMapDatastoreForTest(t, ktype)
 	m := New([]Mount{
-		{Prefix: key.NewKeyFromTypeAndString(keyType, "/"), Datastore: mapds0},
-		{Prefix: key.NewKeyFromTypeAndString(keyType, "/foo"), Datastore: mapds1},
-		{Prefix: key.NewKeyFromTypeAndString(keyType, "/bar"), Datastore: mapds2},
-		{Prefix: key.NewKeyFromTypeAndString(keyType, "/baz"), Datastore: mapds3},
+		{Prefix: key.NewKeyFromTypeAndString(ktype, "/"), Datastore: mapds0},
+		{Prefix: key.NewKeyFromTypeAndString(ktype, "/foo"), Datastore: mapds1},
+		{Prefix: key.NewKeyFromTypeAndString(ktype, "/bar"), Datastore: mapds2},
+		{Prefix: key.NewKeyFromTypeAndString(ktype, "/baz"), Datastore: mapds3},
 	})
-	_, mnts, _, _ := m.lookupAll(key.NewKeyFromTypeAndString(keyType, "/bar"), dsq.Range{})
-	if len(mnts) != 1 || !mnts[0].Equal(key.NewKeyFromTypeAndString(keyType, "/bar")) {
+	_, mnts, _, _ := m.lookupAll(key.NewKeyFromTypeAndString(ktype, "/bar"), dsq.Range{})
+	if len(mnts) != 1 || !mnts[0].Equal(key.NewKeyFromTypeAndString(ktype, "/bar")) {
 		t.Errorf("expected to find the mountpoint /bar, got %v", mnts)
 	}
 
-	if keyType == key.KeyTypeString {
-		_, mnts, _, _ = m.lookupAll(key.NewKeyFromTypeAndString(keyType, "/fo"), dsq.Range{})
-		if len(mnts) != 1 || !mnts[0].Equal(key.NewKeyFromTypeAndString(keyType, "/")) {
+	if ktype == key.KeyTypeString {
+		_, mnts, _, _ = m.lookupAll(key.NewKeyFromTypeAndString(ktype, "/fo"), dsq.Range{})
+		if len(mnts) != 1 || !mnts[0].Equal(key.NewKeyFromTypeAndString(ktype, "/")) {
 			t.Errorf("expected to find the mountpoint /, got %v", mnts)
 		}
 
-		_, mnt, _ := m.lookup(key.NewKeyFromTypeAndString(keyType, "/fo"))
-		if !mnt.Equal(key.NewKeyFromTypeAndString(keyType, "/")) {
+		_, mnt, _ := m.lookup(key.NewKeyFromTypeAndString(ktype, "/fo"))
+		if !mnt.Equal(key.NewKeyFromTypeAndString(ktype, "/")) {
 			t.Errorf("expected to find the mountpoint /, got %v", mnt)
 		}
 	}
 
 	// /foo lives in /, /foo/bar lives in /foo. Most systems don't let us use the key "" or /.
-	_, mnt, _ := m.lookup(key.NewKeyFromTypeAndString(keyType, "/foo"))
-	if !mnt.Equal(key.NewKeyFromTypeAndString(keyType, "/")) {
+	_, mnt, _ := m.lookup(key.NewKeyFromTypeAndString(ktype, "/foo"))
+	if !mnt.Equal(key.NewKeyFromTypeAndString(ktype, "/")) {
 		t.Errorf("expected to find the mountpoint /, got %v", mnt)
 	}
 
-	_, mnt, _ = m.lookup(key.NewKeyFromTypeAndString(keyType, "/foo/bar"))
-	if !mnt.Equal(key.NewKeyFromTypeAndString(keyType, "/foo")) {
+	_, mnt, _ = m.lookup(key.NewKeyFromTypeAndString(ktype, "/foo/bar"))
+	if !mnt.Equal(key.NewKeyFromTypeAndString(ktype, "/foo")) {
 		t.Errorf("expected to find the mountpoint /foo, got %v", mnt)
 	}
 }

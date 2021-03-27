@@ -20,7 +20,7 @@ var (
 	TestError = errors.New("test error")
 )
 
-func RunBatchTest(t *testing.T, keyType key.KeyType, ds dstore.Batching) {
+func RunBatchTest(t *testing.T, ktype key.KeyType, ds dstore.Batching) {
 	batch, err := ds.Batch()
 	if err != nil {
 		t.Fatal(err)
@@ -33,7 +33,7 @@ func RunBatchTest(t *testing.T, keyType key.KeyType, ds dstore.Batching) {
 		rand.Read(blk)
 		blocks = append(blocks, blk)
 
-		key := key.NewKeyFromTypeAndString(keyType,
+		key := key.NewKeyFromTypeAndString(ktype,
 			base32.StdEncoding.EncodeToString(blk[:8]))
 		keys = append(keys, key)
 
@@ -69,13 +69,13 @@ func RunBatchTest(t *testing.T, keyType key.KeyType, ds dstore.Batching) {
 	}
 }
 
-func RunBatchDeleteTest(t *testing.T, keyType key.KeyType, ds dstore.Batching) {
+func RunBatchDeleteTest(t *testing.T, ktype key.KeyType, ds dstore.Batching) {
 	var keys []key.Key
 	for i := 0; i < 20; i++ {
 		blk := make([]byte, 16)
 		rand.Read(blk)
 
-		key := key.NewKeyFromTypeAndString(keyType,
+		key := key.NewKeyFromTypeAndString(ktype,
 			base32.StdEncoding.EncodeToString(blk[:8]))
 		keys = append(keys, key)
 
@@ -109,14 +109,14 @@ func RunBatchDeleteTest(t *testing.T, keyType key.KeyType, ds dstore.Batching) {
 	}
 }
 
-func RunBatchPutAndDeleteTest(t *testing.T, keyType key.KeyType, ds dstore.Batching) {
+func RunBatchPutAndDeleteTest(t *testing.T, ktype key.KeyType, ds dstore.Batching) {
 	batch, err := ds.Batch()
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	ka := key.NewKeyFromTypeAndString(keyType, "a")
-	kb := key.NewKeyFromTypeAndString(keyType, "b")
+	ka := key.NewKeyFromTypeAndString(ktype, "a")
+	kb := key.NewKeyFromTypeAndString(ktype, "b")
 
 	if err := batch.Put(ka, []byte{1}); err != nil {
 		t.Error(err)
@@ -163,8 +163,8 @@ type testDatastore struct {
 	*dstore.MapDatastore
 }
 
-func NewTestDatastore(keyType key.KeyType, testErrors bool) *testDatastore {
-	ds, _ := dstore.NewMapDatastore(keyType)
+func NewTestDatastore(ktype key.KeyType, testErrors bool) *testDatastore {
+	ds, _ := dstore.NewMapDatastore(ktype)
 	return &testDatastore{
 		testErrors:   testErrors,
 		MapDatastore: ds,
@@ -192,8 +192,8 @@ func (d *testDatastore) CollectGarbage() error {
 	return nil
 }
 
-func NewMapDatastoreForTest(t *testing.T, keyType key.KeyType) *dstore.MapDatastore {
-	ds, err := dstore.NewMapDatastore(keyType)
+func NewMapDatastoreForTest(t *testing.T, ktype key.KeyType) *dstore.MapDatastore {
+	ds, err := dstore.NewMapDatastore(ktype)
 	if err != nil {
 		t.Fatal("error creating MapDatastore: ", err)
 	}

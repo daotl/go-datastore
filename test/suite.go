@@ -16,7 +16,7 @@ import (
 )
 
 // BasicSubtests is a list of all basic tests.
-var BasicSubtests = []func(t *testing.T, keyType key.KeyType, ds dstore.Datastore){
+var BasicSubtests = []func(t *testing.T, ktype key.KeyType, ds dstore.Datastore){
 	SubtestBasicPutGet,
 	SubtestNotFounds,
 	SubtestCombinations,
@@ -30,7 +30,7 @@ var BasicSubtests = []func(t *testing.T, keyType key.KeyType, ds dstore.Datastor
 }
 
 // BatchSubtests is a list of all basic batching datastore tests.
-var BatchSubtests = []func(t *testing.T, keyType key.KeyType, ds dstore.Batching){
+var BatchSubtests = []func(t *testing.T, ktype key.KeyType, ds dstore.Batching){
 	RunBatchTest,
 	RunBatchDeleteTest,
 	RunBatchPutAndDeleteTest,
@@ -57,17 +57,17 @@ func clearDs(t *testing.T, ds dstore.Datastore) {
 }
 
 // SubtestAll tests the given datastore against all the subtests.
-func SubtestAll(t *testing.T, keyType key.KeyType, ds dstore.Datastore) {
+func SubtestAll(t *testing.T, ktype key.KeyType, ds dstore.Datastore) {
 	for _, f := range BasicSubtests {
 		t.Run(getFunctionName(f), func(t *testing.T) {
-			f(t, keyType, ds)
+			f(t, ktype, ds)
 			clearDs(t, ds)
 		})
 	}
 	if ds, ok := ds.(dstore.Batching); ok {
 		for _, f := range BatchSubtests {
 			t.Run(getFunctionName(f), func(t *testing.T) {
-				f(t, keyType, ds)
+				f(t, ktype, ds)
 				clearDs(t, ds)
 			})
 		}
