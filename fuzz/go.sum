@@ -3,6 +3,8 @@ github.com/alexbrainman/goissue34681 v0.0.0-20191006012335-3fc7a47baff5 h1:iW0a5
 github.com/alexbrainman/goissue34681 v0.0.0-20191006012335-3fc7a47baff5/go.mod h1:Y2QMoi1vgtOIfc+6DhrMOGkLoGzqSV2rKp4Sm+opsyA=
 github.com/daotl/go-ds-flatfs v0.4.5 h1:cvePjKct3nbCX6+FQnCjK1xBm2kalTzS4mMLSSR6Mco=
 github.com/daotl/go-ds-flatfs v0.4.5/go.mod h1:Xs49z4cspRk6F0d2n0IE/QF7q2Db7Zo03qkQ3jqfTnk=
+github.com/daotl/go-ds-flatfs v0.4.6 h1:vdtGGWEvYYq2YD6lQ8tv4bO6kNz2SE6L78aiTuEPstI=
+github.com/daotl/go-ds-flatfs v0.4.6/go.mod h1:Xs49z4cspRk6F0d2n0IE/QF7q2Db7Zo03qkQ3jqfTnk=
 github.com/davecgh/go-spew v1.1.0/go.mod h1:J7Y8YcW2NihsgmVo/mv3lAwl/skON4iLHjSsI+c5H38=
 github.com/davecgh/go-spew v1.1.1/go.mod h1:J7Y8YcW2NihsgmVo/mv3lAwl/skON4iLHjSsI+c5H38=
 github.com/gogo/protobuf v1.2.1 h1:/s5zKNz0uPFCZ5hddgPdo2TK2TVrUNMn0OOX8/aZMTE=
