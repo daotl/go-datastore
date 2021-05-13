@@ -1,6 +1,6 @@
 # go-datastore
 
-DAOT Labs's fork of [ipfs/go-datastore](https://github.com/ipfs/go-datastore).
+DAOT Labs' fork of [ipfs/go-datastore](https://github.com/ipfs/go-datastore).
 
 [![](https://img.shields.io/badge/made%20by-Protocol%20Labs-blue.svg?style=flat-square)](http://ipn.io)
 [![](https://img.shields.io/badge/project-DAOT%20Labs-red.svg?style=flat-square)](http://github.com/daotl)
