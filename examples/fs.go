@@ -45,7 +45,7 @@ type Datastore struct {
 // NewDatastore returns a new fs Datastore at given `path`
 func NewDatastore(path string) (ds.Datastore, error) {
 	if !isDir(path) {
-		return nil, fmt.Errorf("Failed to find directory at: %v (file? perms?)", path)
+		return nil, fmt.Errorf("failed to find directory at: %v (file? perms?)", path)
 	}
 
 	return &Datastore{path: path}, nil
@@ -61,12 +61,12 @@ func (d *Datastore) Put(key key.Key, value []byte) (err error) {
 	fn := d.KeyFilename(key)
 
 	// mkdirall above.
-	err = os.MkdirAll(filepath.Dir(fn), 0755)
+	err = os.MkdirAll(filepath.Dir(fn), 0o755)
 	if err != nil {
 		return err
 	}
 
-	return ioutil.WriteFile(fn, value, 0666)
+	return ioutil.WriteFile(fn, value, 0o666)
 }
 
 // Sync would ensure that any previous Puts under the prefix are written to disk.
@@ -110,10 +110,9 @@ func (d *Datastore) Delete(key key.Key) (err error) {
 
 // Query implements Datastore.Query
 func (d *Datastore) Query(q query.Query) (query.Results, error) {
-
 	results := make(chan query.Result)
 
-	walkFn := func(path string, info os.FileInfo, err error) error {
+	walkFn := func(path string, info os.FileInfo, _ error) error {
 		// remove ds path prefix
 		relPath, err := filepath.Rel(d.path, path)
 		if err == nil {
@@ -121,9 +120,7 @@ func (d *Datastore) Query(q query.Query) (query.Results, error) {
 		}
 
 		if !info.IsDir() {
-			if strings.HasSuffix(path, ObjectKeySuffix) {
-				path = path[:len(path)-len(ObjectKeySuffix)]
-			}
+			path = strings.TrimSuffix(path, ObjectKeySuffix)
 			// Only selects keys that are strict children of the prefix.
 			if path[0] != '/' {
 				path = "/" + path

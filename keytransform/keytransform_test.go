@@ -13,7 +13,7 @@ import (
 	. "gopkg.in/check.v1"
 
 	ds "github.com/daotl/go-datastore"
-	key "github.com/daotl/go-datastore/key"
+	"github.com/daotl/go-datastore/key"
 	kt "github.com/daotl/go-datastore/keytransform"
 	dsq "github.com/daotl/go-datastore/query"
 	dstest "github.com/daotl/go-datastore/test"
@@ -22,11 +22,15 @@ import (
 // Hook up gocheck into the "go test" runner.
 func TestStrKey(t *testing.T) { TestingT(t) }
 
-type StrKeySuite struct{}
-type BytesKeySuite struct{}
+type (
+	StrKeySuite   struct{}
+	BytesKeySuite struct{}
+)
 
-var _ = Suite(&StrKeySuite{})
-var _ = Suite(&BytesKeySuite{})
+var (
+	_ = Suite(&StrKeySuite{})
+	_ = Suite(&BytesKeySuite{})
+)
 
 var strKeyPair = &kt.Pair{
 	Convert: func(k key.Key) key.Key {
@@ -111,15 +115,15 @@ func (ks *StrKeySuite) TestStrKeyBasic(c *C) {
 	c.Log("listA: ", listA)
 	c.Log("listB: ", listB)
 
-	if err := ktds.Check(); err != dstest.TestError {
+	if err := ktds.Check(); err != dstest.ErrTest {
 		c.Errorf("Unexpected Check() error: %s", err)
 	}
 
-	if err := ktds.CollectGarbage(); err != dstest.TestError {
+	if err := ktds.CollectGarbage(); err != dstest.ErrTest {
 		c.Errorf("Unexpected CollectGarbage() error: %s", err)
 	}
 
-	if err := ktds.Scrub(); err != dstest.TestError {
+	if err := ktds.Scrub(); err != dstest.ErrTest {
 		c.Errorf("Unexpected Scrub() error: %s", err)
 	}
 }
@@ -179,15 +183,15 @@ func (ks *BytesKeySuite) TestBytesKeyBasic(c *C) {
 	c.Log("listA: ", listA)
 	c.Log("listB: ", listB)
 
-	if err := ktds.Check(); err != dstest.TestError {
+	if err := ktds.Check(); err != dstest.ErrTest {
 		c.Errorf("Unexpected Check() error: %s", err)
 	}
 
-	if err := ktds.CollectGarbage(); err != dstest.TestError {
+	if err := ktds.CollectGarbage(); err != dstest.ErrTest {
 		c.Errorf("Unexpected CollectGarbage() error: %s", err)
 	}
 
-	if err := ktds.Scrub(); err != dstest.TestError {
+	if err := ktds.Scrub(); err != dstest.ErrTest {
 		c.Errorf("Unexpected Scrub() error: %s", err)
 	}
 }

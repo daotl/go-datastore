@@ -16,9 +16,7 @@ import (
 	key "github.com/daotl/go-datastore/key"
 )
 
-var (
-	TestError = errors.New("test error")
-)
+var ErrTest = errors.New("test error")
 
 func RunBatchTest(t *testing.T, ktype key.KeyType, ds dstore.Batching) {
 	batch, err := ds.Batch()
@@ -173,21 +171,21 @@ func NewTestDatastore(ktype key.KeyType, testErrors bool) *testDatastore {
 
 func (d *testDatastore) Check() error {
 	if d.testErrors {
-		return TestError
+		return ErrTest
 	}
 	return nil
 }
 
 func (d *testDatastore) Scrub() error {
 	if d.testErrors {
-		return TestError
+		return ErrTest
 	}
 	return nil
 }
 
 func (d *testDatastore) CollectGarbage() error {
 	if d.testErrors {
-		return TestError
+		return ErrTest
 	}
 	return nil
 }
