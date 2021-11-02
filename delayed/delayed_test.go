@@ -6,24 +6,27 @@
 package delayed
 
 import (
+	"context"
 	"testing"
 	"time"
 
-	datastore "github.com/daotl/go-datastore"
-	key "github.com/daotl/go-datastore/key"
+	"github.com/daotl/go-datastore"
+	"github.com/daotl/go-datastore/key"
 	dstest "github.com/daotl/go-datastore/test"
 	delay "github.com/ipfs/go-ipfs-delay"
 )
 
 func TestDelayed(t *testing.T) {
+	ctx := context.Background()
+
 	d := New(dstest.NewMapDatastoreForTest(t, key.KeyTypeString), delay.Fixed(time.Second))
 	now := time.Now()
 	k := key.NewStrKey("test")
-	err := d.Put(k, []byte("value"))
+	err := d.Put(ctx, k, []byte("value"))
 	if err != nil {
 		t.Fatal(err)
 	}
-	_, err = d.Get(k)
+	_, err = d.Get(ctx, k)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -37,5 +40,7 @@ func TestDelayedAll(t *testing.T) {
 	if err != nil {
 		t.Fatal("error creating MapDatastore: ", err)
 	}
+	// Don't actually delay, we just want to make sure this works correctly, not that it
+	// delays anything.
 	dstest.SubtestAll(t, key.KeyTypeString, New(ds, delay.Fixed(time.Millisecond)))
 }

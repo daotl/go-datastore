@@ -7,6 +7,7 @@ package examples
 
 import (
 	"bytes"
+	"context"
 	"testing"
 
 	. "gopkg.in/check.v1"
@@ -41,6 +42,7 @@ func (ks *DSSuite) TestOpen(c *C) {
 }
 
 func (ks *DSSuite) TestBasic(c *C) {
+	ctx := context.Background()
 
 	keys := key.StrsToStrKeys([]string{
 		"foo",
@@ -52,17 +54,17 @@ func (ks *DSSuite) TestBasic(c *C) {
 	})
 
 	for _, k := range keys {
-		err := ks.ds.Put(k, k.Bytes())
+		err := ks.ds.Put(ctx, k, k.Bytes())
 		c.Check(err, Equals, nil)
 	}
 
 	for _, k := range keys {
-		v, err := ks.ds.Get(k)
+		v, err := ks.ds.Get(ctx, k)
 		c.Check(err, Equals, nil)
 		c.Check(bytes.Equal(v, k.Bytes()), Equals, true)
 	}
 
-	r, err := ks.ds.Query(query.Query{Prefix: key.QueryStrKey("/foo/bar/")})
+	r, err := ks.ds.Query(ctx, query.Query{Prefix: key.QueryStrKey("/foo/bar/")})
 	if err != nil {
 		c.Check(err, Equals, nil)
 	}
@@ -93,6 +95,8 @@ func (ks *DSSuite) TestBasic(c *C) {
 }
 
 func (ks *DSSuite) TestDiskUsage(c *C) {
+	ctx := context.Background()
+
 	keys := key.StrsToStrKeys([]string{
 		"foo",
 		"foo/bar",
@@ -106,12 +110,12 @@ func (ks *DSSuite) TestDiskUsage(c *C) {
 	for _, k := range keys {
 		value := k.Bytes()
 		totalBytes += len(value)
-		err := ks.ds.Put(k, value)
+		err := ks.ds.Put(ctx, k, value)
 		c.Check(err, Equals, nil)
 	}
 
 	if ps, ok := ks.ds.(ds.PersistentDatastore); ok {
-		if s, err := ps.DiskUsage(); s != uint64(totalBytes) || err != nil {
+		if s, err := ps.DiskUsage(ctx); s != uint64(totalBytes) || err != nil {
 			c.Error("unexpected size is: ", s)
 		}
 	} else {

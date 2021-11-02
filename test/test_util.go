@@ -7,19 +7,22 @@ package dstest
 
 import (
 	"bytes"
+	"context"
 	"encoding/base32"
 	"errors"
 	"math/rand"
 	"testing"
 
 	dstore "github.com/daotl/go-datastore"
-	key "github.com/daotl/go-datastore/key"
+	"github.com/daotl/go-datastore/key"
 )
 
 var ErrTest = errors.New("test error")
 
 func RunBatchTest(t *testing.T, ktype key.KeyType, ds dstore.Batching) {
-	batch, err := ds.Batch()
+	ctx := context.Background()
+
+	batch, err := ds.Batch(ctx)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -35,7 +38,7 @@ func RunBatchTest(t *testing.T, ktype key.KeyType, ds dstore.Batching) {
 			base32.StdEncoding.EncodeToString(blk[:8]))
 		keys = append(keys, key)
 
-		err := batch.Put(key, blk)
+		err := batch.Put(ctx, key, blk)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -43,20 +46,20 @@ func RunBatchTest(t *testing.T, ktype key.KeyType, ds dstore.Batching) {
 
 	// Ensure they are not in the datastore before committing
 	for _, k := range keys {
-		_, err := ds.Get(k)
+		_, err := ds.Get(ctx, k)
 		if err == nil {
 			t.Fatal("should not have found this block")
 		}
 	}
 
 	// commit, write them to the datastore
-	err = batch.Commit()
+	err = batch.Commit(ctx)
 	if err != nil {
 		t.Fatal(err)
 	}
 
 	for i, k := range keys {
-		blk, err := ds.Get(k)
+		blk, err := ds.Get(ctx, k)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -68,6 +71,8 @@ func RunBatchTest(t *testing.T, ktype key.KeyType, ds dstore.Batching) {
 }
 
 func RunBatchDeleteTest(t *testing.T, ktype key.KeyType, ds dstore.Batching) {
+	ctx := context.Background()
+
 	var keys []key.Key
 	for i := 0; i < 20; i++ {
 		blk := make([]byte, 16)
@@ -77,30 +82,30 @@ func RunBatchDeleteTest(t *testing.T, ktype key.KeyType, ds dstore.Batching) {
 			base32.StdEncoding.EncodeToString(blk[:8]))
 		keys = append(keys, key)
 
-		err := ds.Put(key, blk)
+		err := ds.Put(ctx, key, blk)
 		if err != nil {
 			t.Fatal(err)
 		}
 	}
 
-	batch, err := ds.Batch()
+	batch, err := ds.Batch(ctx)
 	if err != nil {
 		t.Fatal(err)
 	}
 
 	for _, k := range keys {
-		err := batch.Delete(k)
+		err := batch.Delete(ctx, k)
 		if err != nil {
 			t.Fatal(err)
 		}
 	}
-	err = batch.Commit()
+	err = batch.Commit(ctx)
 	if err != nil {
 		t.Fatal(err)
 	}
 
 	for _, k := range keys {
-		_, err := ds.Get(k)
+		_, err := ds.Get(ctx, k)
 		if err == nil {
 			t.Fatal("shouldnt have found block")
 		}
@@ -108,7 +113,9 @@ func RunBatchDeleteTest(t *testing.T, ktype key.KeyType, ds dstore.Batching) {
 }
 
 func RunBatchPutAndDeleteTest(t *testing.T, ktype key.KeyType, ds dstore.Batching) {
-	batch, err := ds.Batch()
+	ctx := context.Background()
+
+	batch, err := ds.Batch(ctx)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -116,29 +123,29 @@ func RunBatchPutAndDeleteTest(t *testing.T, ktype key.KeyType, ds dstore.Batchin
 	ka := key.NewKeyFromTypeAndString(ktype, "a")
 	kb := key.NewKeyFromTypeAndString(ktype, "b")
 
-	if err := batch.Put(ka, []byte{1}); err != nil {
+	if err := batch.Put(ctx, ka, []byte{1}); err != nil {
 		t.Error(err)
 	}
-	if err := batch.Put(kb, []byte{2}); err != nil {
+	if err := batch.Put(ctx, kb, []byte{2}); err != nil {
 		t.Error(err)
 	}
-	if err := batch.Delete(ka); err != nil {
+	if err := batch.Delete(ctx, ka); err != nil {
 		t.Error(err)
 	}
-	if err := batch.Delete(kb); err != nil {
+	if err := batch.Delete(ctx, kb); err != nil {
 		t.Error(err)
 	}
-	if err := batch.Put(kb, []byte{3}); err != nil {
+	if err := batch.Put(ctx, kb, []byte{3}); err != nil {
 		t.Error(err)
 	}
 
 	// TODO: assert that nothing has been flushed yet? What are the semantics here?
 
-	if err := batch.Commit(); err != nil {
+	if err := batch.Commit(ctx); err != nil {
 		t.Error(err)
 	}
 
-	switch _, err := ds.Get(ka); err {
+	switch _, err := ds.Get(ctx, ka); err {
 	case dstore.ErrNotFound:
 	case nil:
 		t.Errorf("expected to not find %s", ka)
@@ -146,7 +153,7 @@ func RunBatchPutAndDeleteTest(t *testing.T, ktype key.KeyType, ds dstore.Batchin
 		t.Error(err)
 	}
 
-	if v, err := ds.Get(kb); err != nil {
+	if v, err := ds.Get(ctx, kb); err != nil {
 		t.Error(err)
 	} else {
 		if len(v) != 1 || v[0] != 3 {
@@ -169,21 +176,21 @@ func NewTestDatastore(ktype key.KeyType, testErrors bool) *testDatastore {
 	}
 }
 
-func (d *testDatastore) Check() error {
+func (d *testDatastore) Check(_ context.Context) error {
 	if d.testErrors {
 		return ErrTest
 	}
 	return nil
 }
 
-func (d *testDatastore) Scrub() error {
+func (d *testDatastore) Scrub(_ context.Context) error {
 	if d.testErrors {
 		return ErrTest
 	}
 	return nil
 }
 
-func (d *testDatastore) CollectGarbage() error {
+func (d *testDatastore) CollectGarbage(_ context.Context) error {
 	if d.testErrors {
 		return ErrTest
 	}

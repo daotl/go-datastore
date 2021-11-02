@@ -5,7 +5,11 @@
 
 package datastore
 
-import key "github.com/daotl/go-datastore/key"
+import (
+	"context"
+
+	key "github.com/daotl/go-datastore/key"
+)
 
 type op struct {
 	key    key.Key
@@ -28,23 +32,23 @@ func NewBasicBatch(ds Datastore) Batch {
 	}
 }
 
-func (bt *basicBatch) Put(key key.Key, val []byte) error {
+func (bt *basicBatch) Put(ctx context.Context, key key.Key, val []byte) error {
 	bt.ops[key.String()] = op{key: key, value: val}
 	return nil
 }
 
-func (bt *basicBatch) Delete(key key.Key) error {
+func (bt *basicBatch) Delete(ctx context.Context, key key.Key) error {
 	bt.ops[key.String()] = op{key: key, delete: true}
 	return nil
 }
 
-func (bt *basicBatch) Commit() error {
+func (bt *basicBatch) Commit(ctx context.Context) error {
 	var err error
 	for _, op := range bt.ops {
 		if op.delete {
-			err = bt.target.Delete(op.key)
+			err = bt.target.Delete(ctx, op.key)
 		} else {
-			err = bt.target.Put(op.key, op.value)
+			err = bt.target.Put(ctx, op.key, op.value)
 		}
 		if err != nil {
 			break

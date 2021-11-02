@@ -7,11 +7,14 @@ package dstest
 
 import (
 	"bytes"
+	"context"
 	"fmt"
 	"math/rand"
 	"reflect"
 	"strings"
 	"testing"
+
+	detectrace "github.com/ipfs/go-detect-race"
 
 	dstore "github.com/daotl/go-datastore"
 	key "github.com/daotl/go-datastore/key"
@@ -23,6 +26,14 @@ import (
 // 20, 30, 40... and at least to 20.
 var ElemCount = 100
 
+func init() {
+	// Reduce the default element count when the race detector is enabled so these tests don't
+	// take forever.
+	if detectrace.WithRace() {
+		ElemCount = 20
+	}
+}
+
 func TestElemCount(t *testing.T) {
 	if ElemCount < 20 {
 		t.Fatal("ElemCount should be set to 20 at least")
@@ -30,15 +41,17 @@ func TestElemCount(t *testing.T) {
 }
 
 func SubtestBasicPutGet(t *testing.T, ktype key.KeyType, ds dstore.Datastore) {
+	ctx := context.Background()
+
 	k := key.NewKeyFromTypeAndString(ktype, "foo")
 	val := []byte("Hello Datastore!")
 
-	err := ds.Put(k, val)
+	err := ds.Put(ctx, k, val)
 	if err != nil {
 		t.Fatal("error putting to datastore: ", err)
 	}
 
-	have, err := ds.Has(k)
+	have, err := ds.Has(ctx, k)
 	if err != nil {
 		t.Fatal("error calling has on key we just put: ", err)
 	}
@@ -47,7 +60,7 @@ func SubtestBasicPutGet(t *testing.T, ktype key.KeyType, ds dstore.Datastore) {
 		t.Fatal("should have key foo, has returned false")
 	}
 
-	size, err := ds.GetSize(k)
+	size, err := ds.GetSize(ctx, k)
 	if err != nil {
 		t.Fatal("error getting size after put: ", err)
 	}
@@ -55,7 +68,7 @@ func SubtestBasicPutGet(t *testing.T, ktype key.KeyType, ds dstore.Datastore) {
 		t.Fatalf("incorrect size: expected %d, got %d", len(val), size)
 	}
 
-	out, err := ds.Get(k)
+	out, err := ds.Get(ctx, k)
 	if err != nil {
 		t.Fatal("error getting value after put: ", err)
 	}
@@ -64,7 +77,7 @@ func SubtestBasicPutGet(t *testing.T, ktype key.KeyType, ds dstore.Datastore) {
 		t.Fatal("value received on get wasnt what we expected:", out)
 	}
 
-	have, err = ds.Has(k)
+	have, err = ds.Has(ctx, k)
 	if err != nil {
 		t.Fatal("error calling has after get: ", err)
 	}
@@ -73,7 +86,7 @@ func SubtestBasicPutGet(t *testing.T, ktype key.KeyType, ds dstore.Datastore) {
 		t.Fatal("should have key foo, has returned false")
 	}
 
-	size, err = ds.GetSize(k)
+	size, err = ds.GetSize(ctx, k)
 	if err != nil {
 		t.Fatal("error getting size after get: ", err)
 	}
@@ -81,12 +94,12 @@ func SubtestBasicPutGet(t *testing.T, ktype key.KeyType, ds dstore.Datastore) {
 		t.Fatalf("incorrect size: expected %d, got %d", len(val), size)
 	}
 
-	err = ds.Delete(k)
+	err = ds.Delete(ctx, k)
 	if err != nil {
 		t.Fatal("error calling delete: ", err)
 	}
 
-	have, err = ds.Has(k)
+	have, err = ds.Has(ctx, k)
 	if err != nil {
 		t.Fatal("error calling has after delete: ", err)
 	}
@@ -95,7 +108,7 @@ func SubtestBasicPutGet(t *testing.T, ktype key.KeyType, ds dstore.Datastore) {
 		t.Fatal("should not have key foo, has returned true")
 	}
 
-	size, err = ds.GetSize(k)
+	size, err = ds.GetSize(ctx, k)
 	switch err {
 	case dstore.ErrNotFound:
 	case nil:
@@ -109,9 +122,11 @@ func SubtestBasicPutGet(t *testing.T, ktype key.KeyType, ds dstore.Datastore) {
 }
 
 func SubtestNotFounds(t *testing.T, ktype key.KeyType, ds dstore.Datastore) {
+	ctx := context.Background()
+
 	badk := key.NewKeyFromTypeAndString(ktype, "notreal")
 
-	val, err := ds.Get(badk)
+	val, err := ds.Get(ctx, badk)
 	if err != dstore.ErrNotFound {
 		t.Fatal("expected ErrNotFound for key that doesnt exist, got: ", err)
 	}
@@ -120,7 +135,7 @@ func SubtestNotFounds(t *testing.T, ktype key.KeyType, ds dstore.Datastore) {
 		t.Fatal("get should always return nil for not found values")
 	}
 
-	have, err := ds.Has(badk)
+	have, err := ds.Has(ctx, badk)
 	if err != nil {
 		t.Fatal("error calling has on not found key: ", err)
 	}
@@ -128,7 +143,7 @@ func SubtestNotFounds(t *testing.T, ktype key.KeyType, ds dstore.Datastore) {
 		t.Fatal("has returned true for key we don't have")
 	}
 
-	size, err := ds.GetSize(badk)
+	size, err := ds.GetSize(ctx, badk)
 	switch err {
 	case dstore.ErrNotFound:
 	case nil:
@@ -140,7 +155,7 @@ func SubtestNotFounds(t *testing.T, ktype key.KeyType, ds dstore.Datastore) {
 		t.Fatal("expected missing size to be -1")
 	}
 
-	err = ds.Delete(badk)
+	err = ds.Delete(ctx, badk)
 	if err != nil {
 		t.Fatal("error calling delete on not found key: ", err)
 	}
@@ -199,32 +214,34 @@ func SubtestManyKeysAndQuery(t *testing.T, ktype key.KeyType, ds dstore.Datastor
 }
 
 func SubtestBasicSync(t *testing.T, ktype key.KeyType, ds dstore.Datastore) {
-	if err := ds.Sync(key.NewKeyFromTypeAndString(ktype, "prefix")); err != nil {
+	ctx := context.Background()
+
+	if err := ds.Sync(ctx, key.NewKeyFromTypeAndString(ktype, "prefix")); err != nil {
 		t.Fatal(err)
 	}
 
-	if err := ds.Put(key.NewKeyFromTypeAndString(ktype, "/prefix"), []byte("foo")); err != nil {
+	if err := ds.Put(ctx, key.NewKeyFromTypeAndString(ktype, "/prefix"), []byte("foo")); err != nil {
 		t.Fatal(err)
 	}
 
-	if err := ds.Sync(key.NewKeyFromTypeAndString(ktype, "/prefix")); err != nil {
+	if err := ds.Sync(ctx, key.NewKeyFromTypeAndString(ktype, "/prefix")); err != nil {
 		t.Fatal(err)
 	}
 
-	if err := ds.Put(key.NewKeyFromTypeAndString(ktype, "/prefix/sub"),
+	if err := ds.Put(ctx, key.NewKeyFromTypeAndString(ktype, "/prefix/sub"),
 		[]byte("bar")); err != nil {
 		t.Fatal(err)
 	}
 
-	if err := ds.Sync(key.NewKeyFromTypeAndString(ktype, "/prefix")); err != nil {
+	if err := ds.Sync(ctx, key.NewKeyFromTypeAndString(ktype, "/prefix")); err != nil {
 		t.Fatal(err)
 	}
 
-	if err := ds.Sync(key.NewKeyFromTypeAndString(ktype, "/prefix/sub")); err != nil {
+	if err := ds.Sync(ctx, key.NewKeyFromTypeAndString(ktype, "/prefix/sub")); err != nil {
 		t.Fatal(err)
 	}
 
-	if err := ds.Sync(key.EmptyKeyFromType(ktype)); err != nil {
+	if err := ds.Sync(ctx, key.EmptyKeyFromType(ktype)); err != nil {
 		t.Fatal(err)
 	}
 }
@@ -394,6 +411,8 @@ func randValue() []byte {
 }
 
 func subtestQuery(t *testing.T, ktype key.KeyType, ds dstore.Datastore, q dsq.Query, count int) {
+	ctx := context.Background()
+
 	var input []dsq.Entry
 	for i := 0; i < count; i++ {
 		s := fmt.Sprintf("%dkey%d", i, i)
@@ -441,7 +460,7 @@ func subtestQuery(t *testing.T, ktype key.KeyType, ds dstore.Datastore, q dsq.Qu
 
 	t.Logf("putting %d values", len(input))
 	for i, e := range input {
-		err := ds.Put(e.Key, e.Value)
+		err := ds.Put(ctx, e.Key, e.Value)
 		if err != nil {
 			t.Fatalf("error on put[%d]: %s", i, err)
 		}
@@ -449,7 +468,7 @@ func subtestQuery(t *testing.T, ktype key.KeyType, ds dstore.Datastore, q dsq.Qu
 
 	t.Log("getting values back")
 	for i, e := range input {
-		val, err := ds.Get(e.Key)
+		val, err := ds.Get(ctx, e.Key)
 		if err != nil {
 			t.Fatalf("error on get[%d]: %s", i, err)
 		}
@@ -460,7 +479,7 @@ func subtestQuery(t *testing.T, ktype key.KeyType, ds dstore.Datastore, q dsq.Qu
 	}
 
 	t.Log("querying values")
-	resp, err := ds.Query(q)
+	resp, err := ds.Query(ctx, q)
 	if err != nil {
 		t.Fatal("calling query: ", err)
 	}
@@ -502,7 +521,7 @@ func subtestQuery(t *testing.T, ktype key.KeyType, ds dstore.Datastore, q dsq.Qu
 
 	t.Log("deleting all keys")
 	for _, e := range input {
-		if err := ds.Delete(e.Key); err != nil {
+		if err := ds.Delete(ctx, e.Key); err != nil {
 			t.Fatal(err)
 		}
 	}

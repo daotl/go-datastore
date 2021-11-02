@@ -6,12 +6,13 @@
 package datastore
 
 import (
+	"context"
 	"errors"
 	"io"
 	"time"
 
-	key "github.com/daotl/go-datastore/key"
-	query "github.com/daotl/go-datastore/query"
+	"github.com/daotl/go-datastore/key"
+	"github.com/daotl/go-datastore/query"
 )
 
 /*
@@ -46,7 +47,7 @@ type Datastore interface {
 	// satisfy these requirements then Sync may be a no-op.
 	//
 	// If the prefix fails to Sync this method returns an error.
-	Sync(prefix key.Key) error
+	Sync(ctx context.Context, prefix key.Key) error
 	io.Closer
 }
 
@@ -61,29 +62,29 @@ type Write interface {
 	// Ultimately, the lowest-level datastore will need to do some value checking
 	// or risk getting incorrect values. It may also be useful to expose a more
 	// type-safe interface to your application, and do the checking up-front.
-	Put(key key.Key, value []byte) error
+	Put(ctx context.Context, key key.Key, value []byte) error
 
 	// Delete removes the value for given `key`. If the key is not in the
 	// datastore, this method returns no error.
-	Delete(key key.Key) error
+	Delete(ctx context.Context, key key.Key) error
 }
 
 // Read is the read-side of the Datastore interface.
 type Read interface {
 	// Get retrieves the object `value` named by `key`.
 	// Get will return ErrNotFound if the key is not mapped to a value.
-	Get(key key.Key) (value []byte, err error)
+	Get(ctx context.Context, key key.Key) (value []byte, err error)
 
 	// Has returns whether the `key` is mapped to a `value`.
 	// In some contexts, it may be much cheaper only to check for existence of
 	// a value, rather than retrieving the value itself. (e.g. HTTP HEAD).
 	// The default implementation is found in `GetBackedHas`.
-	Has(key key.Key) (exists bool, err error)
+	Has(ctx context.Context, key key.Key) (exists bool, err error)
 
 	// GetSize returns the size of the `value` named by `key`.
 	// In some contexts, it may be much cheaper to only get the size of the
 	// value rather than retrieving the value itself.
-	GetSize(key key.Key) (size int, err error)
+	GetSize(ctx context.Context, key key.Key) (size int, err error)
 
 	// Query searches the datastore and returns a query result. This function
 	// may return before the query actually runs. To wait for the query:
@@ -97,7 +98,7 @@ type Read interface {
 	//   entries, _ := result.Rest()
 	//   for entry := range entries { ... }
 	//
-	Query(q query.Query) (query.Results, error)
+	Query(ctx context.Context, q query.Query) (query.Results, error)
 }
 
 // Batching datastores support deferred, grouped updates to the database.
@@ -109,7 +110,7 @@ type Read interface {
 type Batching interface {
 	Datastore
 
-	Batch() (Batch, error)
+	Batch(ctx context.Context) (Batch, error)
 }
 
 // ErrBatchUnsupported is returned if the by Batch if the Datastore doesn't
@@ -121,7 +122,7 @@ var ErrBatchUnsupported = errors.New("this datastore does not support batching")
 type CheckedDatastore interface {
 	Datastore
 
-	Check() error
+	Check(ctx context.Context) error
 }
 
 // ScrubbedDatastore is an interface that should be implemented by datastores
@@ -130,7 +131,7 @@ type CheckedDatastore interface {
 type ScrubbedDatastore interface {
 	Datastore
 
-	Scrub() error
+	Scrub(ctx context.Context) error
 }
 
 // GCDatastore is an interface that should be implemented by datastores which
@@ -138,7 +139,7 @@ type ScrubbedDatastore interface {
 type GCDatastore interface {
 	Datastore
 
-	CollectGarbage() error
+	CollectGarbage(ctx context.Context) error
 }
 
 // PersistentDatastore is an interface that should be implemented by datastores
@@ -147,18 +148,18 @@ type PersistentDatastore interface {
 	Datastore
 
 	// DiskUsage returns the space used by a datastore, in bytes.
-	DiskUsage() (uint64, error)
+	DiskUsage(ctx context.Context) (uint64, error)
 }
 
 // DiskUsage checks if a Datastore is a
 // PersistentDatastore and returns its DiskUsage(),
 // otherwise returns 0.
-func DiskUsage(d Datastore) (uint64, error) {
+func DiskUsage(ctx context.Context, d Datastore) (uint64, error) {
 	persDs, ok := d.(PersistentDatastore)
 	if !ok {
 		return 0, nil
 	}
-	return persDs.DiskUsage()
+	return persDs.DiskUsage(ctx)
 }
 
 // TTLDatastore is an interface that should be implemented by datastores that
@@ -170,9 +171,9 @@ type TTLDatastore interface {
 
 // TTL encapulates the methods that deal with entries with time-to-live.
 type TTL interface {
-	PutWithTTL(key key.Key, value []byte, ttl time.Duration) error
-	SetTTL(key key.Key, ttl time.Duration) error
-	GetExpiration(key key.Key) (time.Time, error)
+	PutWithTTL(ctx context.Context, key key.Key, value []byte, ttl time.Duration) error
+	SetTTL(ctx context.Context, key key.Key, ttl time.Duration) error
+	GetExpiration(ctx context.Context, key key.Key) (time.Time, error)
 }
 
 // Txn extends the Datastore type. Txns allow users to batch queries and
@@ -187,12 +188,12 @@ type Txn interface {
 	// Commit finalizes a transaction, attempting to commit it to the Datastore.
 	// May return an error if the transaction has gone stale. The presence of an
 	// error is an indication that the data was not committed to the Datastore.
-	Commit() error
+	Commit(ctx context.Context) error
 	// Discard throws away changes recorded in a transaction without committing
 	// them to the underlying Datastore. Any calls made to Discard after Commit
 	// has been successfully called will have no effect on the transaction and
 	// state of the Datastore, making it safe to defer.
-	Discard()
+	Discard(ctx context.Context)
 }
 
 // TxnDatastore is an interface that should be implemented by datastores that
@@ -200,7 +201,7 @@ type Txn interface {
 type TxnDatastore interface {
 	Datastore
 
-	NewTransaction(readOnly bool) (Txn, error)
+	NewTransaction(ctx context.Context, readOnly bool) (Txn, error)
 }
 
 // Errors
@@ -224,8 +225,8 @@ var ErrNotFound error = &dsError{error: errors.New("datastore: key not found"), 
 // func (*d SomeDatastore) Has(key Key) (exists bool, err error) {
 //   return GetBackedHas(d, key)
 // }
-func GetBackedHas(ds Read, key key.Key) (bool, error) {
-	_, err := ds.Get(key)
+func GetBackedHas(ctx context.Context, ds Read, key key.Key) (bool, error) {
+	_, err := ds.Get(ctx, key)
 	switch err {
 	case nil:
 		return true, nil
@@ -242,8 +243,8 @@ func GetBackedHas(ds Read, key key.Key) (bool, error) {
 // func (*d SomeDatastore) GetSize(key Key) (size int, err error) {
 //   return GetBackedSize(d, key)
 // }
-func GetBackedSize(ds Read, key key.Key) (int, error) {
-	value, err := ds.Get(key)
+func GetBackedSize(ctx context.Context, ds Read, key key.Key) (int, error) {
+	value, err := ds.Get(ctx, key)
 	if err == nil {
 		return len(value), nil
 	}
@@ -253,5 +254,5 @@ func GetBackedSize(ds Read, key key.Key) (int, error) {
 type Batch interface {
 	Write
 
-	Commit() error
+	Commit(ctx context.Context) error
 }

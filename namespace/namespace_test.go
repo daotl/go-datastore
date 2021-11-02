@@ -7,6 +7,7 @@ package namespace_test
 
 import (
 	"bytes"
+	"context"
 	"sort"
 	"testing"
 
@@ -32,6 +33,7 @@ func (ks *DSSuite) TestBasic(c *C) {
 }
 
 func (ks *DSSuite) testBasic(c *C, prefix string) {
+	ctx := context.Background()
 
 	mpds, _ := ds.NewMapDatastore(key.KeyTypeString)
 	nsds := ns.Wrap(mpds, key.NewStrKey(prefix))
@@ -46,22 +48,22 @@ func (ks *DSSuite) testBasic(c *C, prefix string) {
 	})
 
 	for _, k := range keys {
-		err := nsds.Put(k, k.Bytes())
+		err := nsds.Put(ctx, k, k.Bytes())
 		c.Check(err, Equals, nil)
 	}
 
 	for _, k := range keys {
-		v1, err := nsds.Get(k)
+		v1, err := nsds.Get(ctx, k)
 		c.Check(err, Equals, nil)
 		c.Check(bytes.Equal(v1, k.Bytes()), Equals, true)
 
-		v2, err := mpds.Get(key.NewStrKey(prefix).Child(k))
+		v2, err := mpds.Get(ctx, key.NewStrKey(prefix).Child(k))
 		c.Check(err, Equals, nil)
 		c.Check(bytes.Equal(v2, k.Bytes()), Equals, true)
 	}
 
 	run := func(d ds.Datastore, q dsq.Query) []key.Key {
-		r, err := d.Query(q)
+		r, err := d.Query(ctx, q)
 		c.Check(err, Equals, nil)
 
 		e, err := r.Rest()
@@ -86,6 +88,8 @@ func (ks *DSSuite) testBasic(c *C, prefix string) {
 }
 
 func (ks *DSSuite) TestQuery(c *C) {
+	ctx := context.Background()
+
 	mpds := dstest.NewTestDatastore(key.KeyTypeString, true)
 	nsds := ns.Wrap(mpds, key.NewStrKey("/foo"))
 
@@ -99,11 +103,11 @@ func (ks *DSSuite) TestQuery(c *C) {
 	})
 
 	for _, k := range keys {
-		err := mpds.Put(k, k.Bytes())
+		err := mpds.Put(ctx, k, k.Bytes())
 		c.Check(err, Equals, nil)
 	}
 
-	qres, err := nsds.Query(dsq.Query{})
+	qres, err := nsds.Query(ctx, dsq.Query{})
 	c.Check(err, Equals, nil)
 
 	expect := []dsq.Entry{
@@ -124,7 +128,7 @@ func (ks *DSSuite) TestQuery(c *C) {
 	err = qres.Close()
 	c.Check(err, Equals, nil)
 
-	qres, err = nsds.Query(dsq.Query{Prefix: key.QueryStrKey("/bar")})
+	qres, err = nsds.Query(ctx, dsq.Query{Prefix: key.QueryStrKey("/bar")})
 	c.Check(err, Equals, nil)
 
 	expect = []dsq.Entry{
@@ -140,15 +144,15 @@ func (ks *DSSuite) TestQuery(c *C) {
 		c.Check(string(ent.Value), Equals, string(expect[i].Value))
 	}
 
-	if err := nsds.Check(); err != dstest.ErrTest {
+	if err := nsds.Check(ctx); err != dstest.ErrTest {
 		c.Errorf("Unexpected Check() error: %s", err)
 	}
 
-	if err := nsds.CollectGarbage(); err != dstest.ErrTest {
+	if err := nsds.CollectGarbage(ctx); err != dstest.ErrTest {
 		c.Errorf("Unexpected CollectGarbage() error: %s", err)
 	}
 
-	if err := nsds.Scrub(); err != dstest.ErrTest {
+	if err := nsds.Scrub(ctx); err != dstest.ErrTest {
 		c.Errorf("Unexpected Scrub() error: %s", err)
 	}
 }

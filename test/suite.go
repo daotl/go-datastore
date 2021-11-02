@@ -6,9 +6,12 @@
 package dstest
 
 import (
+	"context"
 	"reflect"
 	"runtime"
 	"testing"
+
+	detectrace "github.com/ipfs/go-detect-race"
 
 	dstore "github.com/daotl/go-datastore"
 	"github.com/daotl/go-datastore/key"
@@ -19,7 +22,6 @@ import (
 var BasicSubtests = []func(t *testing.T, ktype key.KeyType, ds dstore.Datastore){
 	SubtestBasicPutGet,
 	SubtestNotFounds,
-	SubtestCombinations,
 	SubtestPrefix,
 	SubtestOrder,
 	SubtestLimit,
@@ -27,6 +29,13 @@ var BasicSubtests = []func(t *testing.T, ktype key.KeyType, ds dstore.Datastore)
 	SubtestManyKeysAndQuery,
 	SubtestReturnSizes,
 	SubtestBasicSync,
+}
+
+// Only enable the expensive "combinations" test when not running the race detector.
+func init() {
+	if !detectrace.WithRace() {
+		BasicSubtests = append(BasicSubtests, SubtestCombinations)
+	}
 }
 
 // BatchSubtests is a list of all basic batching datastore tests.
@@ -41,7 +50,9 @@ func getFunctionName(i interface{}) string {
 }
 
 func clearDs(t *testing.T, ds dstore.Datastore) {
-	q, err := ds.Query(query.Query{KeysOnly: true})
+	ctx := context.Background()
+
+	q, err := ds.Query(ctx, query.Query{KeysOnly: true})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -50,7 +61,7 @@ func clearDs(t *testing.T, ds dstore.Datastore) {
 		t.Fatal(err)
 	}
 	for _, r := range res {
-		if err := ds.Delete(r.Key); err != nil {
+		if err := ds.Delete(ctx, r.Key); err != nil {
 			t.Fatal(err)
 		}
 	}

@@ -1,6 +1,6 @@
 module github.com/daotl/go-datastore/fuzz
 
-go 1.14
+go 1.17
 
 replace github.com/daotl/go-datastore => ../
 
