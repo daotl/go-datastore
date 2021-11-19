@@ -1,8 +1,8 @@
 package lazy
 
 import (
+	"context"
 	"errors"
-	"fmt"
 	"sync"
 
 	"github.com/daotl/go-datastore"
@@ -10,213 +10,207 @@ import (
 	"github.com/daotl/go-datastore/query"
 )
 
-var (
-	ErrClosed = errors.New("datastore closed")
-)
+var ErrClosed = errors.New("Datastore is closed")
 
 // LazyDatastore wraps a datastore with three states: active, inactive and closed.
-// LazyDatasotre is inited by four Actions init, activate, deactive and closeFunc.
-// the relationship between states and Actions is as follows:
+// State can be changed by three StateChangeFuncs: activateFn, deactivateFn and closeFn.
+// The relationship between states and StateChangeFuncs is as follows:
 //
-//                       -----------(deactivateFunc)----------
-//                       |                                   |  -(ensureActive)-
-//                       V                                   |  |              |
-// nil -(initFunc)-> inactive -----(activateFunc)---------> active <------------
-//                       |                                    |
-//                       --(closeFunc)-> closed <-(closeFunc)--
+//    ----------(deactivateFn)----------
+//    |                                |  -(ensureActive)-
+//    V                                | |               |
+// inactive -----(activateFn)------> active <------------
+//    |                                |
+//    --(closeFn)-> closed <-(closeFn)--
 //
-// Caller can modify the child datastore in action, but caller is also
-// responsible to make sure the child datastore is callable.
-// Every call of lazyDatastore's datastore Interface will make sure datastore is
-// in active state, otherwise an error will occur.
-
+// Every datastore operation will check that the datastore is in the `active` state or try to
+// activate it with the `activateFn` StateChangeFunc, an error will occur if it fails.
 type LazyDatastore struct {
-	child          datastore.Datastore
-	rw             sync.RWMutex
-	writing        bool
-	active         bool
-	closed         bool
-	activateFunc   Action
-	deactivateFunc Action
-	closeFunc      Action
+	wrapped      datastore.Datastore
+	rw           sync.RWMutex
+	active       bool
+	writing      bool // Locked active and performing operations
+	closed       bool
+	activateFn   StateChangeFunc
+	deactivateFn StateChangeFunc
+	closeFn      StateChangeFunc
 }
 
-// Action is the lazyDatastore's state transfer function
-type Action func(d *datastore.Datastore) error
+var _ datastore.Datastore = (*LazyDatastore)(nil)
 
-func NewLazyDataStore(
-	initFunc,
-	activateFunc,
-	deactivateFunc,
-	closeFunc Action) (*LazyDatastore, error) {
-	var d datastore.Datastore
-	if initFunc == nil || activateFunc == nil || deactivateFunc == nil || closeFunc == nil {
-		return nil, fmt.Errorf("nil modifier")
+// StateChangeFunc is a function that change a LazyStore's state
+type StateChangeFunc func(ds datastore.Datastore) error
+
+// DataStoreOp is a Datastore operation
+type DataStoreOp func() error
+
+// NewLazyDataStore creates a LazyStore.
+func NewLazyDataStore(wrapped datastore.Datastore, activateFn, deactivateFn, closeFn StateChangeFunc,
+) (*LazyDatastore, error) {
+	if wrapped == nil {
+		return nil, errors.New("wraooed cannot be nil")
 	}
-	err := initFunc(&d)
-	if err != nil {
-		return nil, err
+	if activateFn == nil || deactivateFn == nil || closeFn == nil {
+		return nil, errors.New("Operations cannot be nil")
 	}
+
 	return &LazyDatastore{
-		child:          d,
-		rw:             sync.RWMutex{},
-		writing:        false,
-		active:         false,
-		closed:         false,
-		activateFunc:   activateFunc,
-		deactivateFunc: deactivateFunc,
-		closeFunc:      closeFunc,
+		wrapped:      wrapped,
+		rw:           sync.RWMutex{},
+		active:       false,
+		writing:      false,
+		closed:       false,
+		activateFn:   activateFn,
+		deactivateFn: deactivateFn,
+		closeFn:      closeFn,
 	}, nil
 }
 
-// EnsureActive runs op and makes sure that the wrapped datastore.Datastore is in active state.
-// EnsureActive returns any error if activation fails or op returns non-nil error.
-func (l *LazyDatastore) EnsureActive(op Action) error {
-	err := l.lockOrTransToActive()
-	defer l.unlockActive()
+// EnsureActive makes sure that LazyDatastore is in active state and runs a DataStoreOp.
+// It returns an error if it fails to activate the wrapped Datastore or `op` returns an error.
+func (d *LazyDatastore) EnsureActive(op DataStoreOp) error {
+	err := d.activateAndLock()
+	defer d.unlockActive()
 	if err != nil {
 		return err
 	}
-	return op(&l.child)
+	return op()
 }
 
-// Activate lazyDatastore.
-// Activate doesn't ensure lazyDatastore keeping in active state.
-// To keep in active state, use EnsureActive instead.
-func (l *LazyDatastore) Activate() error {
-	return l.EnsureActive(func(d *datastore.Datastore) error { return nil })
+// Activate the LazyDatastore.
+// It doesn't ensure that LazyDatastore will be kept in `active` state, use EnsureActive for that.
+func (d *LazyDatastore) Activate() error {
+	return d.EnsureActive(func() error { return nil })
 }
 
-// Deactivate lazyDatastore.
-func (l *LazyDatastore) Deactivate() error {
-	l.rw.Lock()
-	defer l.rw.Unlock()
-	if l.closed {
+// Deactivate the LazyDatastore.
+func (d *LazyDatastore) Deactivate() error {
+	d.rw.Lock()
+	defer d.rw.Unlock()
+	if d.closed {
 		return ErrClosed
 	}
-	if !l.active {
-		return nil // already deactivate
-	}
-	err := l.deactivateFunc(&l.child)
-	if err != nil {
-		return err
-	}
-	l.active = false
-	return nil
-}
-
-// Close the lazyDatastore.
-// Return ErrClosed after being closed.
-// Close will NOT called the child's closer.
-// Close it in closeFunc.
-func (l *LazyDatastore) Close() error {
-	l.rw.Lock()
-	defer l.rw.Unlock()
-	if l.closed {
-		return ErrClosed
-	}
-	err := l.closeFunc(&l.child)
-	if err != nil {
-		return err
-	}
-	l.closed = true
-	return nil
-}
-
-// lockOrTransToActive checks if l is active and locks the datastore to active state.
-// If l is active, prevent datastore's state being changed;
-// If l is not active, change l.rw to exclusive(write) lock and activate it.
-// Return any error while activating.
-// It is caller's responsibility to make sure to call unlockActive in a same goroutine
-// after calling lockOrTransToActive.
-func (l *LazyDatastore) lockOrTransToActive() error {
-	l.rw.RLock()
-	if l.active {
+	if !d.active {
 		return nil
 	}
-	if l.closed {
-		return ErrClosed
-	}
-	l.rw.RUnlock()
-	l.rw.Lock() // Upgrade the lock if lazyDatastore is inactive.
-	if l.active {
-		return nil // double check to avoid calling activavteFunc repeatedly.
-	}
-	if l.closed {
-		return ErrClosed
-	}
-	l.writing = true
-	err := l.activateFunc(&l.child)
-	if err != nil {
+	if err := d.deactivateFn(d.wrapped); err != nil {
 		return err
 	}
-	l.active = true
+	d.active = false
 	return nil
 }
 
-// unlockActive releases datastore.
-func (l *LazyDatastore) unlockActive() {
-	if !l.writing {
-		l.rw.RUnlock()
+// Close the LazyDatastore.
+// Return `ErrClosed` if already closed.
+// Close will NOT call `wrapped`'s closer, `closeFn` should do it.
+func (d *LazyDatastore) Close() error {
+	d.rw.Lock()
+	defer d.rw.Unlock()
+	if d.closed {
+		return ErrClosed
+	}
+	if err := d.closeFn(d.wrapped); err != nil {
+		return err
+	}
+	d.closed = true
+	return nil
+}
+
+// activateAndLock checks if the datastore is active and locks it to `active` state.
+// If it's not `active`, change l.rw to exclusive write lock and activate it.
+// Then prevent it's state from being changed. Return any error occurred while activating.
+// It is the caller's responsibility to make sure to call `unlockActive` in the same goroutine
+// after calling this function.
+func (d *LazyDatastore) activateAndLock() error {
+	d.rw.RLock()
+	if d.active {
+		return nil
+	}
+	if d.closed {
+		return ErrClosed
+	}
+	d.rw.RUnlock()
+
+	// Upgrade to exclusive write lock if LazyDatastore is inactive.
+	d.rw.Lock()
+	// Double check
+	if d.active {
+		return nil
+	}
+	if d.closed {
+		return ErrClosed
+	}
+	d.writing = true
+	if err := d.activateFn(d.wrapped); err != nil {
+		return err
+	}
+	d.active = true
+	return nil
+}
+
+// unlockActive unlock the Datastore allowing it's state to change from `active`.
+func (d *LazyDatastore) unlockActive() {
+	if !d.writing {
+		d.rw.RUnlock()
 	} else {
-		l.writing = false
-		l.rw.Unlock()
+		d.writing = false
+		d.rw.Unlock()
 	}
 }
 
 // Put implements Datastore.Put
-func (l *LazyDatastore) Put(key key.Key, value []byte) (err error) {
-	return l.EnsureActive(func(d *datastore.Datastore) error {
-		return (*d).Put(key, value)
+func (d *LazyDatastore) Put(ctx context.Context, key key.Key, value []byte) (err error) {
+	return d.EnsureActive(func() error {
+		return d.wrapped.Put(ctx, key, value)
 	})
 }
 
-// Sync implements Datastore.Sync
-func (l *LazyDatastore) Sync(prefix key.Key) error {
-	return l.EnsureActive(func(d *datastore.Datastore) error {
-		return (*d).Sync(prefix)
+// Delete implements Datastore.Delete
+func (d *LazyDatastore) Delete(ctx context.Context, key key.Key) (err error) {
+	return d.EnsureActive(func() error {
+		return d.wrapped.Delete(ctx, key)
 	})
 }
 
 // Get implements Datastore.Get
-func (l *LazyDatastore) Get(key key.Key) (value []byte, err error) {
-	err = l.EnsureActive(func(d *datastore.Datastore) error {
-		value, err = (*d).Get(key)
+func (d *LazyDatastore) Get(ctx context.Context, key key.Key) (value []byte, err error) {
+	err = d.EnsureActive(func() error {
+		value, err = d.wrapped.Get(ctx, key)
 		return err
 	})
 	return value, err
 }
 
 // Has implements Datastore.Has
-func (l *LazyDatastore) Has(key key.Key) (exists bool, err error) {
-	err = l.EnsureActive(func(d *datastore.Datastore) error {
-		exists, err = (*d).Has(key)
+func (d *LazyDatastore) Has(ctx context.Context, key key.Key) (exists bool, err error) {
+	err = d.EnsureActive(func() error {
+		exists, err = d.wrapped.Has(ctx, key)
 		return err
 	})
 	return exists, err
 }
 
 // GetSize implements Datastore.GetSize
-func (l *LazyDatastore) GetSize(key key.Key) (size int, err error) {
-	err = l.EnsureActive(func(d *datastore.Datastore) error {
-		size, err = (*d).GetSize(key)
+func (d *LazyDatastore) GetSize(ctx context.Context, key key.Key) (size int, err error) {
+	err = d.EnsureActive(func() error {
+		size, err = d.wrapped.GetSize(ctx, key)
 		return err
 	})
 	return size, err
 }
 
-// Delete implements Datastore.Delete
-func (l *LazyDatastore) Delete(key key.Key) (err error) {
-	return l.EnsureActive(func(d *datastore.Datastore) error {
-		return (*d).Delete(key)
-	})
-}
-
 // Query implements Datastore.Query
-func (l *LazyDatastore) Query(q query.Query) (rs query.Results, err error) {
-	err = l.EnsureActive(func(d *datastore.Datastore) error {
-		rs, err = (*d).Query(q)
+func (d *LazyDatastore) Query(ctx context.Context, q query.Query) (rs query.Results, err error) {
+	err = d.EnsureActive(func() error {
+		rs, err = d.wrapped.Query(ctx, q)
 		return err
 	})
 	return rs, err
+}
+
+// Sync implements Datastore.Sync
+func (d *LazyDatastore) Sync(ctx context.Context, prefix key.Key) error {
+	return d.EnsureActive(func() error {
+		return d.wrapped.Sync(ctx, prefix)
+	})
 }

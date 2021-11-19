@@ -10,21 +10,16 @@ import (
 
 func TestLazy(t *testing.T) {
 	tds := dstest.NewMapDatastoreForTest(t, key.KeyTypeString)
-	init := func(d *datastore.Datastore) error {
+	activateFn := func(d datastore.Datastore) error {
 		return nil
 	}
-	activate := func(d *datastore.Datastore) error {
-		*d = tds
+	deactivateFn := func(d datastore.Datastore) error {
 		return nil
 	}
-	deactivate := func(d *datastore.Datastore) error {
-		*d = nil
-		return nil
+	closeFn := func(d datastore.Datastore) error {
+		return d.Close()
 	}
-	close := func(d *datastore.Datastore) error {
-		return nil
-	}
-	ds, err := NewLazyDataStore(init, activate, deactivate, close)
+	ds, err := NewLazyDataStore(tds, activateFn, deactivateFn, closeFn)
 	if err != nil {
 		t.Log(err)
 		t.FailNow()
