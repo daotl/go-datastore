@@ -15,7 +15,7 @@ import (
 
 	dstore "github.com/daotl/go-datastore"
 	"github.com/daotl/go-datastore/key"
-	query "github.com/daotl/go-datastore/query"
+	"github.com/daotl/go-datastore/query"
 )
 
 // BasicSubtests is a list of all basic tests.
@@ -26,6 +26,7 @@ var BasicSubtests = []func(t *testing.T, ktype key.KeyType, ds dstore.Datastore)
 	SubtestOrder,
 	SubtestLimit,
 	SubtestFilter,
+	SubtestRange,
 	SubtestManyKeysAndQuery,
 	SubtestReturnSizes,
 	SubtestBasicSync,
@@ -77,6 +78,15 @@ func SubtestAll(t *testing.T, ktype key.KeyType, ds dstore.Datastore) {
 	}
 	if ds, ok := ds.(dstore.Batching); ok {
 		for _, f := range BatchSubtests {
+			t.Run(getFunctionName(f), func(t *testing.T) {
+				f(t, ktype, ds)
+				clearDs(t, ds)
+			})
+		}
+	}
+
+	if ds, ok := ds.(dstore.TxnDatastore); ok {
+		for _, f := range TxnSubtests {
 			t.Run(getFunctionName(f), func(t *testing.T) {
 				f(t, ktype, ds)
 				clearDs(t, ds)

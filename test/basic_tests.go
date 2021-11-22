@@ -17,9 +17,14 @@ import (
 	detectrace "github.com/ipfs/go-detect-race"
 
 	dstore "github.com/daotl/go-datastore"
-	key "github.com/daotl/go-datastore/key"
+	"github.com/daotl/go-datastore/key"
 	dsq "github.com/daotl/go-datastore/query"
 )
+
+type readWrite interface {
+	dstore.Read
+	dstore.Write
+}
 
 // ElemCount sets with how many elements the datastore suit
 // tests are usually run with. Best to set to round numbers like
@@ -41,6 +46,10 @@ func TestElemCount(t *testing.T) {
 }
 
 func SubtestBasicPutGet(t *testing.T, ktype key.KeyType, ds dstore.Datastore) {
+	subtestBasicPutGet(t, ktype, ds)
+}
+
+func subtestBasicPutGet(t *testing.T, ktype key.KeyType, ds readWrite) {
 	ctx := context.Background()
 
 	k := key.NewKeyFromTypeAndString(ktype, "foo")
@@ -161,7 +170,31 @@ func SubtestNotFounds(t *testing.T, ktype key.KeyType, ds dstore.Datastore) {
 	}
 }
 
+func SubtestRange(t *testing.T, ktype key.KeyType, ds dstore.Datastore) {
+	input := prepareDs(t, ktype, ds, ElemCount)
+	test := func(start, end string) {
+		t.Run(fmt.Sprintf("Range/%s/%s", start, end), func(t *testing.T) {
+			q := dsq.Query{
+				KeysOnly: true,
+			}
+			if start != "" {
+				q.Range.Start = key.NewKeyFromTypeAndString(ktype, start)
+			}
+			if end != "" {
+				q.Range.End = key.NewKeyFromTypeAndString(ktype, end)
+			}
+			subtestQuery(t, ktype, ds, q, input)
+		})
+	}
+	test("", "")
+	test("6", "")
+	test("", "/prefj")
+	test("/prefix/3", "/prefix/9999")
+}
+
 func SubtestLimit(t *testing.T, ktype key.KeyType, ds dstore.Datastore) {
+	input := prepareDs(t, ktype, ds, ElemCount)
+
 	test := func(offset, limit int) {
 		t.Run(fmt.Sprintf("Slice/%d/%d", offset, limit), func(t *testing.T) {
 			subtestQuery(t, ktype, ds, dsq.Query{
@@ -169,7 +202,7 @@ func SubtestLimit(t *testing.T, ktype key.KeyType, ds dstore.Datastore) {
 				Offset:   offset,
 				Limit:    limit,
 				KeysOnly: true,
-			}, ElemCount)
+			}, input)
 		})
 	}
 	test(0, ElemCount/10)
@@ -183,9 +216,12 @@ func SubtestLimit(t *testing.T, ktype key.KeyType, ds dstore.Datastore) {
 	test(ElemCount*2, 0)
 	test(ElemCount-1, 0)
 	test(ElemCount-5, 0)
+	deleteAll(t, ds, input)
 }
 
 func SubtestOrder(t *testing.T, ktype key.KeyType, ds dstore.Datastore) {
+	input := prepareDs(t, ktype, ds, ElemCount)
+
 	test := func(orders ...dsq.Order) {
 		var types []string
 		for _, o := range orders {
@@ -195,7 +231,7 @@ func SubtestOrder(t *testing.T, ktype key.KeyType, ds dstore.Datastore) {
 		t.Run(name, func(t *testing.T) {
 			subtestQuery(t, ktype, ds, dsq.Query{
 				Orders: orders,
-			}, ElemCount)
+			}, input)
 		})
 	}
 	test(dsq.OrderByKey{})
@@ -207,10 +243,14 @@ func SubtestOrder(t *testing.T, ktype key.KeyType, ds dstore.Datastore) {
 	test(dsq.OrderByFunction(func(a, b dsq.Entry) int {
 		return bytes.Compare(a.Value, b.Value)
 	}))
+	deleteAll(t, ds, input)
+
 }
 
 func SubtestManyKeysAndQuery(t *testing.T, ktype key.KeyType, ds dstore.Datastore) {
-	subtestQuery(t, ktype, ds, dsq.Query{KeysOnly: true}, ElemCount)
+	input := prepareDs(t, ktype, ds, ElemCount)
+	subtestQuery(t, ktype, ds, dsq.Query{KeysOnly: true}, input)
+	deleteAll(t, ds, input)
 }
 
 func SubtestBasicSync(t *testing.T, ktype key.KeyType, ds dstore.Datastore) {
@@ -255,66 +295,33 @@ func (testFilter) Filter(e dsq.Entry) bool {
 }
 
 func SubtestCombinations(t *testing.T, ktype key.KeyType, ds dstore.Datastore) {
-	offsets := []int{
-		0,
-		ElemCount / 10,
-		ElemCount - 5,
-		ElemCount,
-	}
-	limits := []int{
-		0,
-		1,
-		ElemCount / 10,
-		ElemCount,
-	}
-	filters := [][]dsq.Filter{
-		{dsq.FilterKeyCompare{
-			Op:  dsq.Equal,
-			Key: key.QueryKeyFromTypeAndString(ktype, "/0key0"),
-		}},
-		{dsq.FilterKeyCompare{
-			Op:  dsq.LessThan,
-			Key: key.QueryKeyFromTypeAndString(ktype, "/2"),
-		}},
-	}
-	prefixes := key.TypeAndStrsToQueryKeys(ktype, []string{
-		"",
-		"/prefix",
-		"/0", // keys exist under this prefix but they shouldn't match.
-	})
-	orders := [][]dsq.Order{
-		{dsq.OrderByKey{}},
-		{dsq.OrderByKeyDescending{}},
-		{dsq.OrderByValue{}, dsq.OrderByKey{}},
-		{dsq.OrderByFunction(func(a, b dsq.Entry) int { return bytes.Compare(a.Value, b.Value) })},
-	}
-	lengths := []int{
-		0,
-		1,
-		ElemCount,
-	}
-	perms(
-		func(perm []int) {
-			q := dsq.Query{
-				Offset:  offsets[perm[0]],
-				Limit:   limits[perm[1]],
-				Filters: filters[perm[2]],
-				Orders:  orders[perm[3]],
-				Prefix:  prefixes[perm[4]],
-			}
-			length := lengths[perm[5]]
+	offsets, limits, filters, prefixes, orders, lengths := genQueryConditions(ktype)
 
-			t.Run(strings.ReplaceAll(fmt.Sprintf("%d/{%s}", length, q), " ", "·"), func(t *testing.T) {
-				subtestQuery(t, ktype, ds, q, length)
-			})
-		},
-		len(offsets),
-		len(limits),
-		len(filters),
-		len(orders),
-		len(prefixes),
-		len(lengths),
-	)
+	for _, length := range lengths {
+		input := prepareDs(t, ktype, ds, length)
+
+		perms(
+			func(perm []int) {
+				q := dsq.Query{
+					Offset:  offsets[perm[0]],
+					Limit:   limits[perm[1]],
+					Filters: filters[perm[2]],
+					Orders:  orders[perm[3]],
+					Prefix:  prefixes[perm[4]],
+				}
+
+				t.Run(strings.ReplaceAll(fmt.Sprintf("%d/{%s}", length, q), " ", "·"), func(t *testing.T) {
+					subtestQuery(t, ktype, ds, q, input)
+				})
+			},
+			len(offsets),
+			len(limits),
+			len(filters),
+			len(orders),
+			len(prefixes),
+		)
+		deleteAll(t, ds, input)
+	}
 }
 
 func perms(cb func([]int), ops ...int) {
@@ -335,6 +342,8 @@ outer:
 }
 
 func SubtestFilter(t *testing.T, ktype key.KeyType, ds dstore.Datastore) {
+	input := prepareDs(t, ktype, ds, ElemCount)
+
 	test := func(filters ...dsq.Filter) {
 		var types []string
 		for _, o := range filters {
@@ -344,7 +353,7 @@ func SubtestFilter(t *testing.T, ktype key.KeyType, ds dstore.Datastore) {
 		t.Run(name, func(t *testing.T) {
 			subtestQuery(t, ktype, ds, dsq.Query{
 				Filters: filters,
-			}, 100)
+			}, input)
 		})
 	}
 	test(dsq.FilterKeyCompare{
@@ -376,18 +385,24 @@ func SubtestFilter(t *testing.T, ktype key.KeyType, ds dstore.Datastore) {
 	})
 
 	test(new(testFilter))
+
+	deleteAll(t, ds, input)
 }
 
 func SubtestReturnSizes(t *testing.T, ktype key.KeyType, ds dstore.Datastore) {
-	subtestQuery(t, ktype, ds, dsq.Query{ReturnsSizes: true}, 100)
+	input := prepareDs(t, ktype, ds, 100)
+	subtestQuery(t, ktype, ds, dsq.Query{ReturnsSizes: true}, input)
+	deleteAll(t, ds, input)
 }
 
 func SubtestPrefix(t *testing.T, ktype key.KeyType, ds dstore.Datastore) {
+	input := prepareDs(t, ktype, ds, ElemCount)
+
 	test := func(prefix string) {
 		t.Run(prefix, func(t *testing.T) {
 			subtestQuery(t, ktype, ds, dsq.Query{
 				Prefix: key.QueryKeyFromTypeAndString(ktype, prefix),
-			}, ElemCount)
+			}, input)
 		})
 	}
 	test("")
@@ -402,6 +417,8 @@ func SubtestPrefix(t *testing.T, ktype key.KeyType, ds dstore.Datastore) {
 
 	test("/0/")
 	test("/bad/")
+
+	deleteAll(t, ds, input)
 }
 
 func randValue() []byte {
@@ -410,10 +427,9 @@ func randValue() []byte {
 	return value
 }
 
-func subtestQuery(t *testing.T, ktype key.KeyType, ds dstore.Datastore, q dsq.Query, count int) {
-	ctx := context.Background()
-
+func prepareDs(t *testing.T, ktype key.KeyType, ds readWrite, count int) []dsq.Entry {
 	var input []dsq.Entry
+	ctx := context.Background()
 	for i := 0; i < count; i++ {
 		s := fmt.Sprintf("%dkey%d", i, i)
 		key := key.NewKeyFromTypeAndString(ktype, s)
@@ -477,6 +493,13 @@ func subtestQuery(t *testing.T, ktype key.KeyType, ds dstore.Datastore, q dsq.Qu
 			t.Fatal("input value didnt match the one returned from Get")
 		}
 	}
+	return input
+}
+
+// put many kvs, compare the results of ds with naiveApply
+func subtestQuery(t *testing.T, ktype key.KeyType, ds dstore.Read, q dsq.Query, input []dsq.Entry) {
+	// %dkey%d, /prefix/%dkey%d, /prefix/sub/%dkey%d, /capital/%dKEY%d
+	ctx := context.Background()
 
 	t.Log("querying values")
 	resp, err := ds.Query(ctx, q)
@@ -518,6 +541,10 @@ func subtestQuery(t *testing.T, ktype key.KeyType, ds dstore.Datastore, q dsq.Qu
 			t.Errorf("for result %d, expected size > 0 with ReturnsSizes", i)
 		}
 	}
+}
+
+func deleteAll(t *testing.T, ds dstore.Write, input []dsq.Entry) {
+	ctx := context.Background()
 
 	t.Log("deleting all keys")
 	for _, e := range input {
@@ -525,4 +552,46 @@ func subtestQuery(t *testing.T, ktype key.KeyType, ds dstore.Datastore, q dsq.Qu
 			t.Fatal(err)
 		}
 	}
+}
+
+func genQueryConditions(ktype key.KeyType) ([]int, []int, [][]dsq.Filter, []key.Key, [][]dsq.Order, []int) {
+	offsets := []int{
+		0,
+		ElemCount / 10,
+		ElemCount - 5,
+		ElemCount,
+	}
+	limits := []int{
+		0,
+		1,
+		ElemCount / 10,
+		ElemCount,
+	}
+	filters := [][]dsq.Filter{
+		{dsq.FilterKeyCompare{
+			Op:  dsq.Equal,
+			Key: key.QueryKeyFromTypeAndString(ktype, "/0key0"),
+		}},
+		{dsq.FilterKeyCompare{
+			Op:  dsq.LessThan,
+			Key: key.QueryKeyFromTypeAndString(ktype, "/2"),
+		}},
+	}
+	prefixes := key.TypeAndStrsToQueryKeys(ktype, []string{
+		"",
+		"/prefix",
+		"/0", // keys exist under this prefix but they shouldn't match.
+	})
+	orders := [][]dsq.Order{
+		{dsq.OrderByKey{}},
+		{dsq.OrderByKeyDescending{}},
+		{dsq.OrderByValue{}, dsq.OrderByKey{}},
+		{dsq.OrderByFunction(func(a, b dsq.Entry) int { return bytes.Compare(a.Value, b.Value) })},
+	}
+	lengths := []int{
+		0,
+		1,
+		ElemCount,
+	}
+	return offsets, limits, filters, prefixes, orders, lengths
 }
